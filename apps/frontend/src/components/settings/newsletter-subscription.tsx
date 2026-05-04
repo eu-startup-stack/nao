@@ -14,7 +14,9 @@ export function NewsletterSubscription({ email }: { email?: string }) {
 	const [message, setMessage] = useState('');
 
 	const handleSubscribe = async () => {
-		if (!email || isSubmitting) return;
+		if (!email || isSubmitting) {
+			return;
+		}
 
 		setIsSubmitting(true);
 		setMessage('');
