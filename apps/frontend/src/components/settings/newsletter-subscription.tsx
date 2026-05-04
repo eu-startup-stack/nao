@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Loader2, Mail, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/hooks/use-local-storage';
@@ -6,10 +6,12 @@ import { createLocalStorage } from '@/lib/local-storage';
 
 const WAITLIST_API_URL = 'https://sunshine.getnao.io/api/waitlist/';
 
-const newsletterSubscribedStorage = createLocalStorage<boolean>('newsletter-subscribed', false);
-
 export function NewsletterSubscription({ email }: { email?: string }) {
-	const [subscribed, setSubscribed] = useLocalStorage(newsletterSubscribedStorage);
+	const subscribedStorage = useMemo(
+		() => createLocalStorage<boolean>(`newsletter-subscribed:${email ?? ''}`, false),
+		[email],
+	);
+	const [subscribed, setSubscribed] = useLocalStorage(subscribedStorage);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [message, setMessage] = useState('');
 
