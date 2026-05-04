@@ -1,19 +1,41 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2, Mail, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLocalStorage } from '@/hooks/use-local-storage';
-import { createLocalStorage } from '@/lib/local-storage';
 
 const WAITLIST_API_URL = 'https://sunshine.getnao.io/api/waitlist/';
 
+const subscribedStorageKey = (email: string | undefined) => `newsletter-subscribed:${email ?? ''}`;
+
+const readSubscribed = (email: string | undefined): boolean => {
+	try {
+		return localStorage.getItem(subscribedStorageKey(email)) === 'true';
+	} catch {
+		return false;
+	}
+};
+
+const writeSubscribed = (email: string | undefined, value: boolean) => {
+	try {
+		localStorage.setItem(subscribedStorageKey(email), String(value));
+	} catch {
+		// ignore quota / privacy-mode errors
+	}
+};
+
 export function NewsletterSubscription({ email }: { email?: string }) {
-	const subscribedStorage = useMemo(
-		() => createLocalStorage<boolean>(`newsletter-subscribed:${email ?? ''}`, false),
-		[email],
-	);
-	const [subscribed, setSubscribed] = useLocalStorage(subscribedStorage);
+	const [subscribed, setSubscribed] = useState(() => readSubscribed(email));
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [message, setMessage] = useState('');
+
+	useEffect(() => {
+		setSubscribed(readSubscribed(email));
+		setMessage('');
+	}, [email]);
+
+	const persistSubscribed = (value: boolean) => {
+		setSubscribed(value);
+		writeSubscribed(email, value);
+	};
 
 	const handleSubscribe = async () => {
 		if (!email || isSubmitting) {
@@ -46,10 +68,10 @@ export function NewsletterSubscription({ email }: { email?: string }) {
 				/exists/i.test(serverMsg);
 
 			if (response.ok || data?.success === true) {
-				setSubscribed(true);
+				persistSubscribed(true);
 				setMessage("You're subscribed!");
 			} else if (isAlready) {
-				setSubscribed(true);
+				persistSubscribed(true);
 				setMessage("You're already subscribed!");
 			} else {
 				setMessage('Something went wrong. Please try again.');
