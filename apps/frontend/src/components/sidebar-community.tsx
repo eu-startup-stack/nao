@@ -1,3 +1,5 @@
+import { Link } from '@tanstack/react-router';
+import { Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import GithubIcon from '@/components/icons/github-icon.svg';
 import SlackIcon from '@/components/icons/slack.svg';
@@ -39,6 +41,15 @@ export function SidebarCommunity({ isCollapsed }: SidebarCommunityProps) {
 				>
 					<SlackIcon className='size-3.5 grayscale brightness-0 dark:brightness-200 opacity-30' />
 				</a>
+				<Link
+					to='/settings/updates'
+					className={cn(
+						'p-1.5 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-sidebar-accent transition-colors',
+					)}
+					title='Subscribe to updates'
+				>
+					<Mail className='size-3.5' />
+				</Link>
 			</div>
 		</div>
 	);
