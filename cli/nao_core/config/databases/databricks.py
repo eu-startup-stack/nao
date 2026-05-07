@@ -158,7 +158,7 @@ class DatabricksConfig(DatabaseConfig):
         # breaks when the username contains dots (interpreted as UC path separators).
         # Use the connection name instead — already user-controlled and safe.
         kwargs["memtable_volume"] = f"{re.sub(r'[^a-zA-Z0-9_-]', '_', self.name)}-{os.getpid()}"
-        
+
         return ibis.databricks.connect(**kwargs)
 
     def get_database_name(self) -> str:
