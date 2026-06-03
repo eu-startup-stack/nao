@@ -40,6 +40,7 @@ export const getTools = (
 		testMode?: boolean;
 		mcpEnabled?: boolean;
 		mcpServers?: string[] | null;
+		cubeEnabled?: boolean;
 		excludeFollowUps?: boolean;
 	} = {},
 ) => {
@@ -48,6 +49,7 @@ export const getTools = (
 	const {
 		execute_python,
 		execute_sandboxed_code,
+		execute_cube_query,
 		clarification: clarificationTool,
 		suggest_follow_ups,
 		...rest
@@ -58,6 +60,7 @@ export const getTools = (
 		...baseTools,
 		...(!options.testMode && { clarification: clarificationTool }),
 		...mcpTools,
+		...(options.cubeEnabled && { execute_cube_query }),
 		...(agentSettings?.experimental?.pythonSandboxing && execute_python && { execute_python }),
 		...(agentSettings?.experimental?.sandboxes && execute_sandboxed_code && { execute_sandboxed_code }),
 		...extraTools,

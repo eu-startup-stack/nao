@@ -166,12 +166,15 @@ export class AgentService {
 		const modelConfig = await this._getModelConfig(chat.projectId, resolvedLlmSelectedModel);
 		const agentSettings = await projectQueries.getAgentSettings(chat.projectId);
 		const toolContext = await this._getToolContext(chat.projectId, chat.id, chat.userId, agentSettings);
+		const connections = getConnections(toolContext.projectFolder);
+		const cubeEnabled = hasConnectionType(connections, 'cube');
 		const webTools = await this._resolveWebTools(chat.projectId, resolvedLlmSelectedModel.provider, agentSettings);
 		const extraTools = { ...(webTools ?? {}), ...(options.extraTools ?? {}) };
 		const agentTools = getTools(agentSettings, extraTools, {
 			testMode: chat.testMode,
 			mcpEnabled: options.mcpEnabled,
 			mcpServers: options.mcpServers,
+			cubeEnabled,
 			excludeFollowUps: options.excludeFollowUps,
 		});
 		const stopWhen: StopCondition<AgentTools>[] = options.excludeFollowUps
@@ -264,6 +267,10 @@ export class AgentService {
 		}
 		return result;
 	}
+}
+
+function hasConnectionType(connections: ReturnType<typeof getConnections>, type: string): boolean {
+	return connections?.some((connection) => connection.type.toLowerCase() === type) ?? false;
 }
 
 export const MAX_OUTPUT_TOKENS = 16_000;
