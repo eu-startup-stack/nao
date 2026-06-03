@@ -29,7 +29,7 @@ class MysqlDatabaseContext(DatabaseContext):
                 FROM information_schema.TABLES
                 WHERE TABLE_SCHEMA = '{self._schema}' AND TABLE_NAME = '{self._table_name}'
             """
-            row = self._conn.raw_sql(query).fetchone()  # type: ignore[union-attr]
+            row = self._conn.raw_sql(query).fetchone()
             if row and row[0]:
                 return str(row[0]).strip() or None
         except Exception:
@@ -53,7 +53,7 @@ class MysqlDatabaseContext(DatabaseContext):
             FROM information_schema.COLUMNS
             WHERE TABLE_SCHEMA = '{self._schema}' AND TABLE_NAME = '{self._table_name}'
         """
-        rows = self._conn.raw_sql(query).fetchall()  # type: ignore[union-attr]
+        rows = self._conn.raw_sql(query).fetchall()
         return {row[0]: str(row[1]) for row in rows if row[1]}
 
 

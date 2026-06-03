@@ -26,7 +26,7 @@ class PostgresDatabaseContext(DatabaseContext):
                 JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
                 WHERE n.nspname = '{self._schema}' AND c.relname = '{self._table_name}' AND d.objsubid = 0
             """
-            row = self._conn.raw_sql(query).fetchone()  # type: ignore[union-attr]
+            row = self._conn.raw_sql(query).fetchone()
             if row and row[0]:
                 return str(row[0]).strip() or None
         except Exception:
@@ -53,7 +53,7 @@ class PostgresDatabaseContext(DatabaseContext):
             JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
             WHERE n.nspname = '{self._schema}' AND c.relname = '{self._table_name}' AND d.objsubid > 0
         """
-        rows = self._conn.raw_sql(query).fetchall()  # type: ignore[union-attr]
+        rows = self._conn.raw_sql(query).fetchall()
         return {row[0]: str(row[1]) for row in rows if row[1]}
 
     def _cast_float(self, expr: str) -> str:

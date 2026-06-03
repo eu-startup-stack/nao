@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -99,6 +100,13 @@ class ExecuteSQLRequest(BaseModel):
     azure_access_token: str | None = None
 
 
+class ExecuteCubeQueryRequest(BaseModel):
+    query: dict[str, Any]
+    nao_project_folder: str
+    database_id: str | None = None
+    env_vars: dict[str, str] | None = None
+
+
 class ExecuteSQLResponse(BaseModel):
     data: list[dict]
     row_count: int
@@ -159,6 +167,67 @@ def _convert_value(v: object):
         return item_method()
 
     return v
+
+
+def _load_config(request: ExecuteSQLRequest | ExecuteCubeQueryRequest) -> NaoConfig:
+    project_path = Path(request.nao_project_folder)
+    config = NaoConfig.try_load(
+        project_path,
+        raise_on_error=True,
+        extra_env=request.env_vars,
+    )
+    assert config is not None
+    return config
+
+
+def _select_database_config(config: NaoConfig, database_id: str | None):
+    if len(config.databases) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No databases configured in nao_config.yaml",
+        )
+
+    if len(config.databases) == 1:
+        return config.databases[0]
+
+    if database_id:
+        db_config = next(
+            (db for db in config.databases if db.name == database_id),
+            None,
+        )
+        if db_config is not None:
+            return db_config
+        available_databases = [db.name for db in config.databases]
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": f"Database '{database_id}' not found",
+                "available_databases": available_databases,
+            },
+        )
+
+    available_databases = [db.name for db in config.databases]
+    raise HTTPException(
+        status_code=400,
+        detail={
+            "message": "Multiple databases configured. Please specify database_id.",
+            "available_databases": available_databases,
+        },
+    )
+
+
+def _dataframe_response(df: pd.DataFrame, dialect: str | None = None) -> ExecuteSQLResponse:
+    data = [
+        {k: _convert_value(v) for k, v in row.items()}
+        for row in df.to_dict(orient="records")
+    ]
+
+    return ExecuteSQLResponse(
+        data=data,
+        row_count=len(data),
+        columns=[str(c) for c in df.columns.tolist()],
+        dialect=dialect,
+    )
 
 
 # =============================================================================
@@ -222,45 +291,8 @@ async def refresh_context():
 @app.post("/execute_sql", response_model=ExecuteSQLResponse)
 async def execute_sql(request: ExecuteSQLRequest):
     try:
-        project_path = Path(request.nao_project_folder)
-        config = NaoConfig.try_load(
-            project_path,
-            raise_on_error=True,
-            extra_env=request.env_vars,
-        )
-        assert config is not None
-
-        if len(config.databases) == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="No databases configured in nao_config.yaml",
-            )
-
-        if len(config.databases) == 1:
-            db_config = config.databases[0]
-        elif request.database_id:
-            db_config = next(
-                (db for db in config.databases if db.name == request.database_id),
-                None,
-            )
-            if db_config is None:
-                available_databases = [db.name for db in config.databases]
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "message": f"Database '{request.database_id}' not found",
-                        "available_databases": available_databases,
-                    },
-                )
-        else:
-            available_databases = [db.name for db in config.databases]
-            raise HTTPException(
-                status_code=400,
-                detail={
-                    "message": "Multiple databases configured. Please specify database_id.",
-                    "available_databases": available_databases,
-                },
-            )
+        config = _load_config(request)
+        db_config = _select_database_config(config, request.database_id)
 
         auth_mode_value = getattr(getattr(db_config, "auth_mode", None), "value", None)
 
@@ -280,17 +312,29 @@ async def execute_sql(request: ExecuteSQLRequest):
         else:
             df = db_config.execute_sql(request.sql)
 
-        data = [
-            {k: _convert_value(v) for k, v in row.items()}
-            for row in df.to_dict(orient="records")
-        ]
+        return _dataframe_response(df, dialect=db_config.type)
+    except HTTPException:
+        raise
+    except NaoConfigError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-        return ExecuteSQLResponse(
-            data=data,
-            row_count=len(data),
-            columns=[str(c) for c in df.columns.tolist()],
-            dialect=db_config.type,
-        )
+
+@app.post("/execute_cube_query", response_model=ExecuteSQLResponse)
+async def execute_cube_query(request: ExecuteCubeQueryRequest):
+    try:
+        config = _load_config(request)
+        db_config = _select_database_config(config, request.database_id)
+        execute = getattr(db_config, "execute_cube_query", None)
+        if not callable(execute):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Database '{db_config.name}' is not a Cube connection",
+            )
+
+        df = execute(request.query)
+        return _dataframe_response(df, dialect=db_config.type)
     except HTTPException:
         raise
     except NaoConfigError as e:

@@ -3,14 +3,11 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 import yaml
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from rich.console import Console
-
-if TYPE_CHECKING:
-    from ibis import BaseBackend
 
 from nao_core.ui import UI, ask_confirm, ask_select
 
@@ -306,15 +303,15 @@ class NaoConfig(BaseModel):
         data = yaml.safe_load(processed_content)
         return cls.model_validate(data)
 
-    def get_connection(self, name: str) -> BaseBackend:
-        """Get an Ibis connection by database name."""
+    def get_connection(self, name: str) -> Any:
+        """Get a connection by database name."""
         for db in self.databases:
             if db.name == name:
                 return db.connect()
         raise ValueError(f"Database '{name}' not found in configuration")
 
-    def get_all_connections(self) -> dict[str, BaseBackend]:
-        """Get all Ibis connections as a dict keyed by name."""
+    def get_all_connections(self) -> dict[str, Any]:
+        """Get all database connections as a dict keyed by name."""
         return {db.name: db.connect() for db in self.databases}
 
     @classmethod

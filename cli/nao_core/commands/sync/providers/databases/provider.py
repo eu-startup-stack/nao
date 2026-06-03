@@ -6,7 +6,7 @@ import re
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rich.console import Console
 from rich.markup import escape
@@ -35,15 +35,12 @@ from nao_core.templates.engine import get_template_engine
 
 from ..base import SyncProvider, SyncResult
 
-if TYPE_CHECKING:
-    from ibis import BaseBackend
-
 console = Console()
 
 TEMPLATE_PREFIX = "databases"
 
 
-def _filter_templates_by_config(templates: list[str], db_config: AnyDatabaseConfig) -> list[str]:
+def _filter_templates_by_config(templates: list[str], db_config: DatabaseConfig) -> list[str]:
     """Keep only templates whose stem matches the configured templates."""
     allowed = {a.value for a in db_config.templates}
     return [t for t in templates if Path(t).stem.replace(".md", "") in allowed]
@@ -65,7 +62,7 @@ def _fmt_error(error: Exception) -> str:
     return escape(str(error))
 
 
-def _fetch_query_history(db_config: DatabaseConfig, conn: BaseBackend) -> list[str]:
+def _fetch_query_history(db_config: DatabaseConfig, conn: Any) -> list[str]:
     """Fetch query history over the already-open sync connection.
 
     Reusing the sync connection keeps history fetching on the same credentials
@@ -79,7 +76,7 @@ def _fetch_query_history(db_config: DatabaseConfig, conn: BaseBackend) -> list[s
         return []
 
     try:
-        cursor = conn.raw_sql(history_sql)  # type: ignore[union-attr]
+        cursor = conn.raw_sql(history_sql)
         queries = _extract_query_texts(cursor)
         fetched = len(queries)
         queries = db_config.filter_query_history(queries)
@@ -155,7 +152,7 @@ def _should_refresh_profiling(
 
 
 def sync_database(
-    db_config: AnyDatabaseConfig,
+    db_config: DatabaseConfig,
     base_path: Path,
     progress: Progress,
     project_path: Path | None = None,

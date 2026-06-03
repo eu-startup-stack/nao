@@ -1,11 +1,13 @@
 import tempfile
 from pathlib import Path
 
+import pandas as pd
 import pytest
 import yaml
 from fastapi.testclient import TestClient
 
 from main import app
+from nao_core.config.databases.cube import CubeConfig
 
 
 def assert_sql_result(
@@ -78,6 +80,55 @@ def test_execute_sql_with_cte_duckdb(duckdb_project_folder):
         columns=["id", "message"],
         expected_data=[{"id": 1, "message": "hello"}],
     )
+
+
+@pytest.fixture
+def cube_project_folder():
+    """Create a temporary project folder with a Cube config."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config = {
+            "project_name": "test-project",
+            "databases": [
+                {
+                    "name": "test-cube",
+                    "type": "cube",
+                    "url": "https://cube.example.com/cubejs-api",
+                    "api_token": "secret",
+                }
+            ],
+        }
+        config_path = Path(tmpdir) / "nao_config.yaml"
+        with config_path.open("w") as f:
+            yaml.dump(config, f)
+        yield tmpdir
+
+
+def test_execute_cube_query(cube_project_folder, monkeypatch):
+    """Test execute_cube_query endpoint with a Cube JSON query."""
+
+    def execute_cube_query(self, query):
+        assert query == {"measures": ["Orders.count"], "dimensions": ["Orders.status"]}
+        return pd.DataFrame([{"Orders.status": "completed", "Orders.count": 12}])
+
+    monkeypatch.setattr(CubeConfig, "execute_cube_query", execute_cube_query)
+    client = TestClient(app)
+
+    response = client.post(
+        "/execute_cube_query",
+        json={
+            "query": {"measures": ["Orders.count"], "dimensions": ["Orders.status"]},
+            "nao_project_folder": cube_project_folder,
+        },
+    )
+
+    assert response.status_code == 200
+    assert_sql_result(
+        response.json(),
+        row_count=1,
+        columns=["Orders.status", "Orders.count"],
+        expected_data=[{"Orders.status": "completed", "Orders.count": 12}],
+    )
+    assert response.json()["dialect"] == "cube"
 
 
 # BigQuery tests (requires SSO authentication)

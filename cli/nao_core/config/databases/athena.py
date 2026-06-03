@@ -41,7 +41,7 @@ class AthenaDatabaseContext(DatabaseContext):
             LIMIT 10
         """
         try:
-            rows = self._fetchall(self._conn.raw_sql(query))  # type: ignore[union-attr]
+            rows = self._fetchall(self._conn.raw_sql(query))
             return [
                 {"value": self._json_safe_value(r[0]), "count": int(r[1])}
                 for r in rows

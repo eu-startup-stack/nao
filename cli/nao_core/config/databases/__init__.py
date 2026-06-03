@@ -6,6 +6,7 @@ from .athena import AthenaConfig
 from .base import DatabaseAccessor, DatabaseConfig, DatabaseTemplate, DatabaseType
 from .bigquery import BigQueryConfig
 from .clickhouse import ClickHouseConfig
+from .cube import CubeConfig
 from .databricks import DatabricksConfig
 from .duckdb import DuckDBConfig
 from .fabric import FabricConfig
@@ -26,6 +27,7 @@ AnyDatabaseConfig = Annotated[
         Annotated[AthenaConfig, Tag("athena")],
         Annotated[BigQueryConfig, Tag("bigquery")],
         Annotated[ClickHouseConfig, Tag("clickhouse")],
+        Annotated[CubeConfig, Tag("cube")],
         Annotated[DatabricksConfig, Tag("databricks")],
         Annotated[FabricConfig, Tag("fabric")],
         Annotated[SnowflakeConfig, Tag("snowflake")],
@@ -46,6 +48,7 @@ DATABASE_CONFIG_CLASSES: Dict[DatabaseType, Type[object]] = {
     DatabaseType.ATHENA: AthenaConfig,
     DatabaseType.BIGQUERY: BigQueryConfig,
     DatabaseType.CLICKHOUSE: ClickHouseConfig,
+    DatabaseType.CUBE: CubeConfig,
     DatabaseType.DUCKDB: DuckDBConfig,
     DatabaseType.DATABRICKS: DatabricksConfig,
     DatabaseType.FABRIC: FabricConfig,
@@ -78,6 +81,7 @@ __all__ = [
     "AthenaConfig",
     "BigQueryConfig",
     "ClickHouseConfig",
+    "CubeConfig",
     "DATABASE_CONFIG_CLASSES",
     "DatabaseAccessor",
     "DatabaseConfig",

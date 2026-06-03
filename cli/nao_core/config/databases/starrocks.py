@@ -105,13 +105,13 @@ class StarRocksDatabaseContext(DatabaseContext):
               AND TABLE_NAME = {_quote_literal(self._table_name)}
             LIMIT 1
         """
-        row = self._conn.raw_sql(query).fetchone()  # type: ignore[union-attr]
+        row = self._conn.raw_sql(query).fetchone()
         if row and row[0]:
             return str(row[0]).strip() or None
         return None
 
     def _description_from_show_create(self) -> str | None:
-        row = self._conn.raw_sql(self._show_create_table_sql()).fetchone()  # type: ignore[union-attr]
+        row = self._conn.raw_sql(self._show_create_table_sql()).fetchone()
         if not row:
             return None
         ddl = str(row[-1]).strip() if row[-1] else ""
@@ -141,7 +141,7 @@ class StarRocksDatabaseContext(DatabaseContext):
               AND TABLE_NAME = {_quote_literal(self._table_name)}
             ORDER BY ORDINAL_POSITION
         """
-        rows = self._conn.raw_sql(query).fetchall()  # type: ignore[union-attr]
+        rows = self._conn.raw_sql(query).fetchall()
         return [
             {
                 "name": str(row[0]),
@@ -153,7 +153,7 @@ class StarRocksDatabaseContext(DatabaseContext):
         ]
 
     def _columns_from_show_full_columns(self) -> list[dict[str, Any]]:
-        cursor = self._conn.raw_sql(f"SHOW FULL COLUMNS FROM {self._qualified_table_sql()}")  # type: ignore[union-attr]
+        cursor = self._conn.raw_sql(f"SHOW FULL COLUMNS FROM {self._qualified_table_sql()}")
         rows = cursor.fetchall()
         description = getattr(cursor, "description", None) or []
         columns = {str(desc[0]).lower(): idx for idx, desc in enumerate(description) if desc and desc[0]}
@@ -186,14 +186,14 @@ class StarRocksDatabaseContext(DatabaseContext):
 
     def row_count(self) -> int:
         try:
-            row = self._conn.raw_sql(f"SELECT COUNT(*) FROM {self._qualified_table_sql()}").fetchone()  # type: ignore[union-attr]
+            row = self._conn.raw_sql(f"SELECT COUNT(*) FROM {self._qualified_table_sql()}").fetchone()
             return int(row[0]) if row and row[0] is not None else 0
         except Exception:
             return 0
 
     def preview(self, limit: int = 10) -> list[dict[str, Any]]:
         safe_limit = max(0, int(limit))
-        cursor = self._conn.raw_sql(f"SELECT * FROM {self._qualified_table_sql()} LIMIT {safe_limit}")  # type: ignore[union-attr]
+        cursor = self._conn.raw_sql(f"SELECT * FROM {self._qualified_table_sql()} LIMIT {safe_limit}")
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description] if cursor.description else []
         out: list[dict[str, Any]] = []

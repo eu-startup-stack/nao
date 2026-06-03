@@ -35,6 +35,7 @@ export function SystemPrompt({
 	const hasTSQL = connections.some((connection) => ['mssql', 'fabric'].includes(connection.type.toLowerCase()));
 	const hasBigQuery = connections.some((connection) => connection.type.toLowerCase() === 'bigquery');
 	const hasMySQL = connections.some((connection) => connection.type.toLowerCase() === 'mysql');
+	const hasCube = connections.some((connection) => connection.type.toLowerCase() === 'cube');
 
 	return (
 		<Block>
@@ -97,6 +98,12 @@ export function SystemPrompt({
 					researching.
 				</ListItem>
 				<ListItem>If you can execute a SQL query, use the execute_sql tool for it.</ListItem>
+				{hasCube && (
+					<ListItem>
+						For Cube semantic layer connections, use execute_cube_query with a Cube query JSON object
+						instead of SQL.
+					</ListItem>
+				)}
 				{!testMode && (
 					<ListItem>
 						Use the <Bold>clarification</Bold> tool when the user's request is genuinely ambiguous and
@@ -134,6 +141,12 @@ export function SystemPrompt({
 				<ListItem>
 					Never assume columns names, if available, use the columns.md file to get the column names.
 				</ListItem>
+				{hasCube && (
+					<ListItem>
+						<Bold>Cube semantic layer:</Bold> Query dimensions and measures by their full Cube member names
+						from columns.md, for example {`{"measures":["Orders.count"],"dimensions":["Orders.status"]}`}.
+					</ListItem>
+				)}
 				{hasTSQL && (
 					<>
 						<ListItem>
@@ -187,7 +200,10 @@ export function SystemPrompt({
 				<ListItem>
 					The column_name must match the column in the SELECT output that produced the number.
 				</ListItem>
-				<ListItem>The Query ID is shown in the execute_sql tool output (e.g., Query ID: query_a1b2).</ListItem>
+				<ListItem>
+					The Query ID is shown in the execute_sql or execute_cube_query tool output (e.g., Query ID:
+					query_a1b2).
+				</ListItem>
 			</List>
 			<Title level={2}>Formatting Rules</Title>
 			<List>

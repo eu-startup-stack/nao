@@ -5,14 +5,13 @@ import re
 import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import questionary
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 if TYPE_CHECKING:
     import pandas as pd
-    from ibis import BaseBackend
 
 
 class DatabaseType(str, Enum):
@@ -21,6 +20,7 @@ class DatabaseType(str, Enum):
     ATHENA = "athena"
     BIGQUERY = "bigquery"
     CLICKHOUSE = "clickhouse"
+    CUBE = "cube"
     DUCKDB = "duckdb"
     DATABRICKS = "databricks"
     FABRIC = "fabric"
@@ -149,8 +149,8 @@ class DatabaseConfig(BaseModel, ABC):
         ...
 
     @abstractmethod
-    def connect(self) -> BaseBackend:
-        """Create an Ibis connection for this database."""
+    def connect(self) -> Any:
+        """Create a connection for this database."""
         ...
 
     def execute_sql(self, sql: str) -> pd.DataFrame:
@@ -159,7 +159,7 @@ class DatabaseConfig(BaseModel, ABC):
 
         conn = self.connect()
         try:
-            cursor = conn.raw_sql(sql)  # type: ignore[union-attr]
+            cursor = conn.raw_sql(sql)
 
             if hasattr(cursor, "fetchdf"):
                 return cursor.fetchdf()
@@ -215,7 +215,7 @@ class DatabaseConfig(BaseModel, ABC):
         """Get the database name for this database type."""
         ...
 
-    def get_schemas(self, conn: BaseBackend) -> list[str]:
+    def get_schemas(self, conn: Any) -> list[str]:
         """Return the list of schemas to sync. Override in subclasses for custom behavior."""
         # Prefer schemas (dataset-like) when available.
         list_schemas = getattr(conn, "list_schemas", None)
@@ -235,13 +235,13 @@ class DatabaseConfig(BaseModel, ABC):
 
         return []
 
-    def create_context(self, conn: BaseBackend, schema: str, table_name: str):
+    def create_context(self, conn: Any, schema: str, table_name: str):
         """Create a DatabaseContext for this table. Override in subclasses for custom metadata."""
         from nao_core.config.databases.context import DatabaseContext
 
         return DatabaseContext(conn, schema, table_name)
 
-    def get_semantic_views(self, conn: "BaseBackend", schema: str) -> list[dict[str, str]]:
+    def get_semantic_views(self, conn: Any, schema: str) -> list[dict[str, str]]:
         """Fetch semantic views for a schema. Override in subclasses that support semantic views."""
         return []
 

@@ -44,6 +44,7 @@ export const LLM_PROVIDERS: LlmProvidersType = {
 						clearToolInputs: false,
 						excludeTools: [
 							'display_chart',
+							'execute_cube_query',
 							'execute_python',
 							'execute_sql',
 							'execute_sandboxed_code',

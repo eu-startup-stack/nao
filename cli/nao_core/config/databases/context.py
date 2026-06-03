@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from ibis import BaseBackend
+from typing import Any
 
 
 class DatabaseContext:
@@ -19,7 +16,7 @@ class DatabaseContext:
     to fetch warehouse-specific metadata (e.g. BigQuery partition info).
     """
 
-    def __init__(self, conn: BaseBackend, schema: str, table_name: str):
+    def __init__(self, conn: Any, schema: str, table_name: str):
         self._conn = conn
         self._schema = schema
         self._table_name = table_name
@@ -130,7 +127,7 @@ class DatabaseContext:
         is_date = any(t in col_type.lower() for t in ("date", "timestamp", "time"))
 
         query = self._build_profiling_query(col)
-        row = self._fetchone(self._conn.raw_sql(query))  # type: ignore[union-attr]
+        row = self._fetchone(self._conn.raw_sql(query))
         if not row:
             return None
 
@@ -160,7 +157,7 @@ class DatabaseContext:
         where_clause = f"WHERE {partition_filter}" if partition_filter else ""
 
         query = f"SELECT {self._null_count_sql(col_sql)} AS null_count FROM {table_sql} {where_clause}".strip()
-        row = self._fetchone(self._conn.raw_sql(query))  # type: ignore[union-attr]
+        row = self._fetchone(self._conn.raw_sql(query))
         if not row:
             return None
 
@@ -182,9 +179,7 @@ class DatabaseContext:
             val_where = "WHERE " + " AND ".join(base_conditions + ["val IS NOT NULL"])
             try:
                 row = self._fetchone(
-                    self._conn.raw_sql(  # type: ignore[union-attr]
-                        f"SELECT COUNT(DISTINCT val) FROM {unnest_from} {base_where}".strip()
-                    )
+                    self._conn.raw_sql(f"SELECT COUNT(DISTINCT val) FROM {unnest_from} {base_where}".strip())
                 )
                 if row and row[0] is not None:
                     profile["distinct_count"] = int(row[0])
@@ -193,7 +188,7 @@ class DatabaseContext:
             if profile["distinct_count"] and profile["distinct_count"] <= 50:
                 try:
                     rows = self._fetchall(
-                        self._conn.raw_sql(  # type: ignore[union-attr]
+                        self._conn.raw_sql(
                             f"SELECT val, COUNT(*) AS cnt FROM {unnest_from} {val_where} "
                             f"GROUP BY val ORDER BY cnt DESC, val ASC LIMIT 10".strip()
                         )
@@ -210,7 +205,7 @@ class DatabaseContext:
             if string_expr:
                 try:
                     row = self._fetchone(
-                        self._conn.raw_sql(  # type: ignore[union-attr]
+                        self._conn.raw_sql(
                             f"SELECT COUNT(DISTINCT {string_expr}) FROM {table_sql} {where_clause}".strip()
                         )
                     )
@@ -224,7 +219,7 @@ class DatabaseContext:
                         conditions.append(f"{string_expr} IS NOT NULL")
                         top_where = "WHERE " + " AND ".join(conditions)
                         rows = self._fetchall(
-                            self._conn.raw_sql(  # type: ignore[union-attr]
+                            self._conn.raw_sql(
                                 f"SELECT {string_expr} AS val, COUNT(*) AS cnt FROM {table_sql} {top_where} "
                                 f"GROUP BY {string_expr} ORDER BY COUNT(*) DESC, {string_expr} ASC LIMIT 10".strip()
                             )
@@ -335,7 +330,7 @@ class DatabaseContext:
     def _fetch_top_values(self, col: dict) -> list[dict]:
         query = self._build_top_values_query(col)
         try:
-            rows = self._fetchall(self._conn.raw_sql(query))  # type: ignore[union-attr]
+            rows = self._fetchall(self._conn.raw_sql(query))
             return [
                 {"value": self._json_safe_value(r[0]), "count": int(r[1])}
                 for r in rows

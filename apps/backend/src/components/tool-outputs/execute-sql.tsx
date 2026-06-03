@@ -1,12 +1,13 @@
 import { pluralize } from '@nao/shared';
-import type { executeSql } from '@nao/shared/tools';
+import type { executeCubeQuery, executeSql } from '@nao/shared/tools';
 
 import { Block, ListItem, Span, Title, TitledList } from '../../lib/markdown';
 import { QueryRows } from './query-rows';
 
 const MAX_ROWS = 40;
+type QueryOutput = executeSql.Output | executeCubeQuery.Output;
 
-export const ExecuteSqlOutput = ({ output, maxRows = MAX_ROWS }: { output: executeSql.Output; maxRows?: number }) => {
+export const ExecuteSqlOutput = ({ output, maxRows = MAX_ROWS }: { output: QueryOutput; maxRows?: number }) => {
 	if (output.data.length === 0) {
 		return <Block>The query was successfully executed and returned no rows.</Block>;
 	}
