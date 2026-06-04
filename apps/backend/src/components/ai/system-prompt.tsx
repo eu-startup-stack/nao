@@ -134,6 +134,11 @@ export function SystemPrompt({
 				<ListItem>
 					Never assume columns names, if available, use the columns.md file to get the column names.
 				</ListItem>
+				<ListItem>
+					A LIMIT/TOP clause caps how many rows are returned, not how many exist. Never state a total or an
+					"exact" count based on the number of rows a limited query returned. To count rows, run a separate
+					query using COUNT(*) (or COUNT over a subquery) without a LIMIT/TOP clause.
+				</ListItem>
 				{hasTSQL && (
 					<>
 						<ListItem>
