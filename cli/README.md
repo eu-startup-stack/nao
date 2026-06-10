@@ -167,6 +167,17 @@ Syncs configured resources to local files:
 - **Git repositories** — clones or pulls repos into `repos/`
 - **Notion pages** — exports pages as markdown into `docs/notion/`
 
+Options:
+
+- `--threads` / `-t`: Number of parallel worker threads for sync (default: `1`). Overrides `threads` in `nao_config.yaml`.
+
+You can also set a project-wide default in `nao_config.yaml`:
+
+```yaml
+project_name: my-project
+threads: 4
+```
+
 After syncing, any Jinja templates (`*.j2` files) in the project directory are rendered with the nao context.
 
 Optional `ai_summary` generation:
