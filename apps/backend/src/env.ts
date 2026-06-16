@@ -58,11 +58,6 @@ const envSchema = z.object({
 		.default('false')
 		.transform((val) => val === 'true'),
 
-	// When 'true', POST /mcp replies with a single buffered JSON body. When 'false'
-	// (default), it streams over SSE so progress notifications emitted during a long
-	// `ask_nao` run reach the client mid-flight (clients honoring resetTimeoutOnProgress
-	// won't time out at 60s). Set to 'true' only for clients that cannot accept
-	// text/event-stream on POST.
 	MCP_ENABLE_JSON_RESPONSE: z
 		.enum(['true', 'false'])
 		.optional()
