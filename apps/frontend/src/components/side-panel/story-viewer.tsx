@@ -65,6 +65,7 @@ export function StoryViewer({ chatId, storySlug, isReadonlyMode: readonlyProp }:
 	const resolvedStorySlug = draftStory?.id ?? storySlug;
 	const {
 		versions,
+		storyId,
 		storyTitle: storedTitle,
 		archivedAt,
 		currentVersion,
@@ -162,6 +163,7 @@ export function StoryViewer({ chatId, storySlug, isReadonlyMode: readonlyProp }:
 				title={storyTitle}
 				chatId={chatId}
 				storySlug={resolvedStorySlug}
+				storyId={storyId}
 				shareId={shareId}
 				allStories={allStories}
 				onSwitchStory={switchStory}

@@ -185,20 +185,23 @@ export const DisplayChartToolCall = ({
 		<div
 			className={`flex flex-col items-center my-4 gap-2 ${config.chart_type !== 'kpi_card' && !normalSize ? 'aspect-3/2' : ''}`}
 		>
-			<div className='flex w-full items-center justify-between'>
+			<div className='flex w-full items-center justify-between gap-2'>
 				{config.chart_type != 'kpi_card' ? (
 					<span className='text-sm font-medium text-foreground flex-1'>{config.title}</span>
 				) : (
 					<div></div>
 				)}
 				{storyIds.length > 0 && (
-					<Button variant='ghost-muted' size='sm' onClick={handleAddToStory} className='gap-1'>
+					<Button
+						variant='outline'
+						className='rounded-full border gap-2 dark:bg-transparent'
+						size='sm'
+						onClick={handleAddToStory}
+					>
 						<FilePlus className='size-3' />
 						<span className='text-xs'>Add to story</span>
 					</Button>
 				)}
-			</div>
-			<div className='relative w-full flex justify-end'>
 				<div className='flex items-center gap-1'>
 					{config.chart_type !== 'pie' && config.x_axis_type === 'date' && (
 						<ChartRangeSelector
@@ -207,25 +210,27 @@ export const DisplayChartToolCall = ({
 							onRangeSelected={(range) => setDataRange(range)}
 						/>
 					)}
-					{isEditable && (
-						<Button
-							variant='ghost-muted'
-							size='icon-xs'
-							onClick={() => setIsEditOpen(true)}
-							title='Edit chart'
-						>
-							<Pencil className='size-3.5' />
-						</Button>
-					)}
 					{config.chart_type != 'kpi_card' && (
 						<Button
-							variant='ghost-muted'
+							variant='ghost'
 							size='icon-xs'
+							className='hover:rounded-full'
 							onClick={handleDownload}
 							disabled={isDownloading}
 							title='Download as PNG'
 						>
-							<Download className='size-3.5' />
+							<Download className='size-4' />
+						</Button>
+					)}
+					{isEditable && (
+						<Button
+							variant='ghost'
+							size='icon-xs'
+							className='hover:rounded-full'
+							onClick={() => setIsEditOpen(true)}
+							title='Edit chart'
+						>
+							<Pencil className='size-4' />
 						</Button>
 					)}
 				</div>
