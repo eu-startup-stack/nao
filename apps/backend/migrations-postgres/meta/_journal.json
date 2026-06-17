@@ -344,6 +344,13 @@
       "when": 1781709786441,
       "tag": "0048_user_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1781711321926,
+      "tag": "0049_add_display_settings",
+      "breakpoints": true
     }
   ]
 }

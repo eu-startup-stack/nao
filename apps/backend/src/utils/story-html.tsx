@@ -1,10 +1,16 @@
 import { DEFAULT_COLORS, defaultColorFor, formatCompactNumber, labelize } from '@nao/shared';
+import {
+	type DateFormatSettings,
+	DEFAULT_DATE_FORMAT_SETTINGS,
+	formatDateValue,
+	resolveDateFormatPattern,
+} from '@nao/shared/date';
 import type { ParsedChartBlock, ParsedTableBlock, Segment } from '@nao/shared/story-segments';
 import { splitCodeIntoSegments } from '@nao/shared/story-segments';
 import { formatCellValue, isNumericColumn } from '@nao/shared/story-table-utils';
 import type { displayChart } from '@nao/shared/tools';
 import { marked, Renderer } from 'marked';
-import React from 'react';
+import React, { createContext, useContext } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { renderChartToSvg } from '../components/generate-chart';
@@ -17,20 +23,32 @@ const DOC_HORIZ_PADDING = 24;
 const CHART_WIDTH = DOC_MAX_WIDTH - DOC_HORIZ_PADDING * 2;
 const CHART_HEIGHT = Math.round((CHART_WIDTH * 9) / 16);
 
-export function generateStoryHtml(story: StoryInput, queryData: QueryDataMap | null): string {
+const DateFormatContext = createContext<DateFormatSettings>({ ...DEFAULT_DATE_FORMAT_SETTINGS });
+
+export function generateStoryHtml(
+	story: StoryInput,
+	queryData: QueryDataMap | null,
+	dateFormat?: DateFormatSettings | null,
+): string {
+	const resolvedDateFormat = dateFormat ?? { ...DEFAULT_DATE_FORMAT_SETTINGS };
 	const segments = splitCodeIntoSegments(story.code);
 	const markup = renderToStaticMarkup(
-		<StoryDocument title={story.title}>
-			{segments.map((seg, i) => (
-				<StorySegment key={i} segment={seg} queryData={queryData} />
-			))}
-			<StoryFooter />
-		</StoryDocument>,
+		<DateFormatContext.Provider value={resolvedDateFormat}>
+			<StoryDocument title={story.title}>
+				{segments.map((seg, i) => (
+					<StorySegment key={i} segment={seg} queryData={queryData} />
+				))}
+				<StoryFooter />
+			</StoryDocument>
+		</DateFormatContext.Provider>,
 	);
 	return `<!DOCTYPE html>\n${markup}`;
 }
 
 function StoryDocument({ title, children }: { title: string; children: React.ReactNode }) {
+	const dateFormat = useContext(DateFormatContext);
+	const pattern = resolveDateFormatPattern(dateFormat);
+	const tooltipScript = renderTooltipScript(pattern);
 	return (
 		<html lang='en'>
 			<head>
@@ -41,14 +59,16 @@ function StoryDocument({ title, children }: { title: string; children: React.Rea
 			</head>
 			<body>
 				{children}
-				<script dangerouslySetInnerHTML={{ __html: TOOLTIP_SCRIPT }} />
+				<script dangerouslySetInnerHTML={{ __html: tooltipScript }} />
 			</body>
 		</html>
 	);
 }
 
 function StoryFooter() {
-	const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+	const dateFormat = useContext(DateFormatContext);
+	const today = new Date().toISOString().slice(0, 10);
+	const date = formatDateValue(today, dateFormat);
 	return (
 		<footer
 			style={{ marginTop: 48, paddingTop: 16, borderTop: '1px solid #e5e7eb', fontSize: 12, color: '#9ca3af' }}
@@ -110,6 +130,7 @@ function GridBlock({
 }
 
 function ChartBlock({ chart, queryData }: { chart: ParsedChartBlock; queryData: QueryDataMap | null }) {
+	const dateFormat = useContext(DateFormatContext);
 	const rows = queryData?.[chart.queryId]?.data as Record<string, unknown>[] | undefined;
 	if (!rows?.length) {
 		return <Placeholder label={chart.title || 'Chart'} message='Data unavailable' />;
@@ -127,6 +148,7 @@ function ChartBlock({ chart, queryData }: { chart: ParsedChartBlock; queryData: 
 			height: CHART_HEIGHT,
 			margin: { top: 0, right: 0, bottom: 0, left: 0 },
 			includeLegend: false,
+			dateFormat,
 		});
 		const chartData = JSON.stringify({
 			data: rows,
@@ -151,6 +173,7 @@ function ChartBlock({ chart, queryData }: { chart: ParsedChartBlock; queryData: 
 }
 
 function ChartLegend({ series }: { series: ParsedChartBlock['series'] }) {
+	const dateFormat = useContext(DateFormatContext);
 	return (
 		<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, paddingTop: 12 }}>
 			{series.map((s, i) => {
@@ -161,7 +184,7 @@ function ChartLegend({ series }: { series: ParsedChartBlock['series'] }) {
 						style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b7280', fontSize: 12 }}
 					>
 						<div style={{ width: 8, height: 8, borderRadius: 2, flexShrink: 0, background: color }} />
-						{s.label || labelize(s.data_key)}
+						{s.label || labelize(s.data_key, dateFormat)}
 					</div>
 				);
 			})}
@@ -274,10 +297,11 @@ function TableBlock({ table, queryData }: { table: ParsedTableBlock; queryData: 
 }
 
 function CellValue({ value }: { value: unknown }) {
+	const dateFormat = useContext(DateFormatContext);
 	if (value === null || value === undefined) {
 		return <span style={{ fontStyle: 'italic', color: 'rgba(0,0,0,0.3)' }}>NULL</span>;
 	}
-	return <>{formatCellValue(value)}</>;
+	return <>{formatCellValue(value, dateFormat)}</>;
 }
 
 function Placeholder({ label, message }: { label: string; message: string }) {
@@ -341,13 +365,53 @@ img{max-width:100%;height:auto;border-radius:4px;margin:8px 0}
 @media print{body{padding:0;max-width:none}.nao-tooltip{display:none}.nao-chart{break-inside:avoid}table{break-inside:avoid}div[style*="display:flex"]{break-inside:avoid}h1,h2,h3{break-after:avoid}svg{max-width:100%!important;height:auto!important}footer{break-inside:avoid}}
 `;
 
-const TOOLTIP_SCRIPT = `
+function renderTooltipScript(datePattern: string): string {
+	// Inside a `<script>` block, an HTML parser will close the script tag on a
+	// raw `</script>` regardless of JS string quoting. Escape `<` (and the
+	// equally hazardous `--` / `]]>`) so a user-supplied custom pattern can
+	// never inject markup.
+	const escapedPattern = JSON.stringify(datePattern)
+		.replace(/</g, '\\u003C')
+		.replace(/>/g, '\\u003E')
+		.replace(/&/g, '\\u0026')
+		.replace(/\u2028/g, '\\u2028')
+		.replace(/\u2029/g, '\\u2029');
+	return TOOLTIP_SCRIPT_TEMPLATE.replace('__DATE_PATTERN__', escapedPattern);
+}
+
+const TOOLTIP_SCRIPT_TEMPLATE = `
 (function(){
 	var PIE_COLORS=${JSON.stringify(DEFAULT_COLORS)};
+	var DATE_PATTERN=__DATE_PATTERN__;
+	var MONTHS_LONG=['January','February','March','April','May','June','July','August','September','October','November','December'];
+	var MONTHS_SHORT=MONTHS_LONG.map(function(m){return m.slice(0,3)});
+	var WEEKDAYS_LONG=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+	var WEEKDAYS_SHORT=WEEKDAYS_LONG.map(function(w){return w.slice(0,3)});
+	var TOKEN_REGEX=/YYYY|YY|MMMM|MMM|MM|M|DD|D|dddd|ddd|\\[([^\\]]*)\\]/g;
+	function pad2(n){n=String(n);return n.length<2?'0'+n:n}
+	function formatDate(d){
+		var y=d.getUTCFullYear(),mi=d.getUTCMonth(),day=d.getUTCDate(),wi=d.getUTCDay();
+		return DATE_PATTERN.replace(TOKEN_REGEX,function(token,literal){
+			if(literal!==undefined)return literal;
+			switch(token){
+				case 'YYYY':return String(y).padStart(4,'0');
+				case 'YY':return pad2(y%100);
+				case 'MMMM':return MONTHS_LONG[mi];
+				case 'MMM':return MONTHS_SHORT[mi];
+				case 'MM':return pad2(mi+1);
+				case 'M':return String(mi+1);
+				case 'DD':return pad2(day);
+				case 'D':return String(day);
+				case 'dddd':return WEEKDAYS_LONG[wi];
+				case 'ddd':return WEEKDAYS_SHORT[wi];
+				default:return token;
+			}
+		});
+	}
 	function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 	function labelize(s){
 		var str=String(s);
-		if(/^\\d{4}-\\d{2}-\\d{2}/.test(str)){var d=new Date(str);if(!isNaN(d.getTime()))return escHtml(d.toLocaleDateString('en-US',{timeZone:'UTC'}))}
+		if(/^\\d{4}-\\d{2}-\\d{2}/.test(str)){var d=new Date(str);if(!isNaN(d.getTime()))return escHtml(formatDate(d))}
 		return escHtml(str.replace(/_/g,' ').replace(/\\b\\w/g,function(c){return c.toUpperCase()}))
 	}
 	function formatCompact(v){var a=Math.abs(v);if(a>=1e9)return (v/1e9).toFixed(1).replace(/[.]0$/,'')+'B';if(a>=1e6)return (v/1e6).toFixed(1).replace(/[.]0$/,'')+'M';if(a>=1e4)return (v/1e3).toFixed(1).replace(/[.]0$/,'')+'K';return v.toLocaleString()}

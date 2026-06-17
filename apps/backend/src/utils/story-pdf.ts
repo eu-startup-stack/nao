@@ -1,3 +1,4 @@
+import type { DateFormatSettings } from '@nao/shared/date';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import type { Browser } from 'puppeteer-core';
@@ -17,8 +18,12 @@ async function loadPuppeteer() {
 	}
 }
 
-export async function generateStoryPdf(story: StoryInput, queryData: QueryDataMap | null): Promise<Buffer> {
-	const html = generateStoryHtml(story, queryData);
+export async function generateStoryPdf(
+	story: StoryInput,
+	queryData: QueryDataMap | null,
+	dateFormat?: DateFormatSettings | null,
+): Promise<Buffer> {
+	const html = generateStoryHtml(story, queryData, dateFormat);
 	const browser = await getBrowser();
 	const page = await browser.newPage();
 

@@ -6,6 +6,7 @@ import { z } from 'zod/v4';
 import { STORY_REFRESH_JOB_NAME } from '../handlers/story-refresh.handler';
 import * as activityQueries from '../queries/activity.queries';
 import * as chatQueries from '../queries/chat.queries';
+import * as projectQueries from '../queries/project.queries';
 import * as scheduledJobQueries from '../queries/scheduled-job.queries';
 import * as sharedStoryQueries from '../queries/shared-story.queries';
 import * as storyQueries from '../queries/story.queries';
@@ -316,7 +317,14 @@ export const storyRoutes = {
 				throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found.' });
 			}
 			const cache = await storyQueries.getStoryDataCacheByStoryId(input.storyId);
-			return buildDownloadResponse(input.format, story.title, story.code, cache?.queryData ?? null);
+			const displaySettings = story.projectId ? await projectQueries.getDisplaySettings(story.projectId) : null;
+			return buildDownloadResponse(
+				input.format,
+				story.title,
+				story.code,
+				cache?.queryData ?? null,
+				displaySettings?.dateFormat,
+			);
 		}),
 
 	download: chatOwnerProcedure
@@ -344,7 +352,16 @@ export const storyRoutes = {
 				version.cacheSchedule,
 			);
 
-			return buildDownloadResponse(input.format, version.title, version.code, queryData);
+			const projectId = await chatQueries.getChatProjectId(input.chatId);
+			const displaySettings = projectId ? await projectQueries.getDisplaySettings(projectId) : null;
+
+			return buildDownloadResponse(
+				input.format,
+				version.title,
+				version.code,
+				queryData,
+				displaySettings?.dateFormat,
+			);
 		}),
 };
 

@@ -1,3 +1,4 @@
+import { DEFAULT_DATE_FORMAT_SETTINGS, type DisplaySettings } from '@nao/shared/date';
 import type { UpdatedAtFilter, UserRole } from '@nao/shared/types';
 import { and, asc, desc, eq, gt, gte, lte, or, type SQL, sql } from 'drizzle-orm';
 
@@ -232,6 +233,25 @@ export const updateEnabledToolsAndKnownServers = async (
 		.set({ enabledMcpTools: next.enabledTools, knownMcpServers: next.knownServers })
 		.where(eq(s.project.id, projectId))
 		.execute();
+};
+
+export const getDisplaySettings = async (projectId: string): Promise<DisplaySettings> => {
+	const project = await getProjectById(projectId);
+	const stored = project?.displaySettings ?? {};
+	return {
+		dateFormat: stored.dateFormat ?? { ...DEFAULT_DATE_FORMAT_SETTINGS },
+	};
+};
+
+export const updateDisplaySettings = async (projectId: string, settings: DisplaySettings): Promise<DisplaySettings> => {
+	const current = await getDisplaySettings(projectId);
+	const next: DisplaySettings = {
+		...current,
+		...settings,
+		dateFormat: settings.dateFormat ?? current.dateFormat,
+	};
+	await db.update(s.project).set({ displaySettings: next }).where(eq(s.project.id, projectId)).execute();
+	return next;
 };
 
 export const getEnvVars = async (projectId: string): Promise<Record<string, string>> => {

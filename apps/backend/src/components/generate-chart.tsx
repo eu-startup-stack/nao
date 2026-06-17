@@ -1,4 +1,5 @@
 import { buildChart, defaultColorFor, labelize } from '@nao/shared';
+import type { DateFormatSettings } from '@nao/shared/date';
 import type { displayChart } from '@nao/shared/tools';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
@@ -12,6 +13,7 @@ export interface RenderChartInput {
 	height?: number;
 	margin?: { top?: number; right?: number; bottom?: number; left?: number };
 	includeLegend?: boolean;
+	dateFormat?: DateFormatSettings | null;
 }
 
 export function generateChartImage(input: RenderChartInput): Buffer {
@@ -20,7 +22,7 @@ export function generateChartImage(input: RenderChartInput): Buffer {
 }
 
 export function renderChartToSvg(input: RenderChartInput): string {
-	const { config, data } = input;
+	const { config, data, dateFormat } = input;
 	const width = input.width ?? 800;
 	const height = input.height ?? 500;
 	const margin = input.margin ?? { top: 10, right: 20, bottom: 5, left: 0 };
@@ -31,7 +33,8 @@ export function renderChartToSvg(input: RenderChartInput): string {
 		return series?.color || defaultColorFor(key, index);
 	};
 
-	const maxLabelWidth = estimateMaxLabelWidth(data, config.x_axis_key);
+	const labelFormatter = (value: string) => labelize(value, dateFormat);
+	const maxLabelWidth = estimateMaxLabelWidth(data, config.x_axis_key, dateFormat);
 
 	const chart = buildChart({
 		data,
@@ -40,6 +43,7 @@ export function renderChartToSvg(input: RenderChartInput): string {
 		xAxisType: config.x_axis_type === 'number' ? 'number' : 'category',
 		series: config.series,
 		colorFor,
+		labelFormatter,
 		showGrid: true,
 		margin,
 		title: config.title,
@@ -50,7 +54,7 @@ export function renderChartToSvg(input: RenderChartInput): string {
 
 	const legend: LegendEntry[] = includeLegend
 		? config.series.map((s, i) => ({
-				label: s.label || labelize(s.data_key),
+				label: s.label || labelize(s.data_key, dateFormat),
 				dataKey: s.data_key,
 				color: colorFor(s.data_key, i),
 			}))
@@ -63,9 +67,13 @@ const CHAR_WIDTH_PX = 7;
 const TICK_PADDING_PX = 16;
 const MIN_TICK_WIDTH_PX = 40;
 
-function estimateMaxLabelWidth(data: Record<string, unknown>[], xAxisKey: string): number {
+function estimateMaxLabelWidth(
+	data: Record<string, unknown>[],
+	xAxisKey: string,
+	dateFormat?: DateFormatSettings | null,
+): number {
 	const maxCharCount = data.reduce((max, row) => {
-		const formatted = labelize(String(row[xAxisKey] ?? ''));
+		const formatted = labelize(String(row[xAxisKey] ?? ''), dateFormat);
 		return Math.max(max, formatted.length);
 	}, 0);
 	return Math.max(maxCharCount * CHAR_WIDTH_PX + TICK_PADDING_PX, MIN_TICK_WIDTH_PX);

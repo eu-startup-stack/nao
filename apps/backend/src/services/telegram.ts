@@ -374,7 +374,12 @@ class TelegramService {
 			return;
 		}
 		try {
-			const png = generateChartImage({ config: part.input, data: sqlOutput.rows });
+			const displaySettings = await projectQueries.getDisplaySettings(this._projectId);
+			const png = generateChartImage({
+				config: part.input,
+				data: sqlOutput.rows,
+				dateFormat: displaySettings.dateFormat,
+			});
 			state.renderedChartIds.add(part.toolCallId);
 			ctx.textBlockIndex = -1;
 

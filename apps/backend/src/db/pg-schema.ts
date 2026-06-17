@@ -1,4 +1,5 @@
 import type { McpChartEmbedStoredConfig } from '@nao/shared';
+import type { DisplaySettings } from '@nao/shared/date';
 import type { CitationData, LlmProvider, UserPreferences } from '@nao/shared/types';
 import { BUDGET_PERIODS, FOLDER_SYSTEM_TYPE, FOLDER_VISIBILITY, SHARE_VISIBILITY, USER_ROLES } from '@nao/shared/types';
 import { type ProviderMetadata } from 'ai';
@@ -182,6 +183,7 @@ export const project = pgTable(
 		telegramSettings: jsonb('telegram_settings').$type<TelegramSettings>(),
 		whatsappSettings: jsonb('whatsapp_settings').$type<WhatsappSettings>(),
 		mcpEndpointSettings: jsonb('mcp_endpoint_settings').$type<McpEndpointSettings>(),
+		displaySettings: jsonb('display_settings').$type<DisplaySettings>(),
 
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at')

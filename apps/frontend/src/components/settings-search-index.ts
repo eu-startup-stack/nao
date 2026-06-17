@@ -121,6 +121,25 @@ export const settingsSearchIndex: SettingsSearchEntry[] = [
 		keywords: ['google', 'bigquery', 'service account', 'gcp'],
 		adminOnly: true,
 	},
+	{
+		page: '/settings/project',
+		pageLabel: 'Project',
+		title: 'Date format',
+		description: 'Choose how dates are displayed in charts, tooltips and query result tables.',
+		keywords: [
+			'date',
+			'format',
+			'locale',
+			'european',
+			'american',
+			'iso',
+			'dd/mm/yyyy',
+			'mm/dd/yyyy',
+			'custom',
+			'pattern',
+		],
+		adminOnly: true,
+	},
 
 	// ── Project > Models ─────────────────────────────────────
 	{

@@ -728,7 +728,12 @@ class ProjectSlackBot {
 			return;
 		}
 		try {
-			const png = generateChartImage({ config: part.input, data: sqlOutput.rows });
+			const displaySettings = await projectQueries.getDisplaySettings(this.projectId);
+			const png = generateChartImage({
+				config: part.input,
+				data: sqlOutput.rows,
+				dateFormat: displaySettings.dateFormat,
+			});
 			const chartId = await chartImageQueries.saveChart(part.toolCallId, png.toString('base64'));
 			state.renderedChartIds.add(part.toolCallId);
 

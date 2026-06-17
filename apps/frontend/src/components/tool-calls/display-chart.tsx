@@ -18,6 +18,7 @@ import type { DateRange } from '@/lib/charts.utils';
 import { filterByDateRange, sortByDateKey, DATE_RANGE_OPTIONS, toKey } from '@/lib/charts.utils';
 import { findStoryIds } from '@/lib/story.utils';
 import { useChatId } from '@/hooks/use-chat-id';
+import { useDateFormat } from '@/hooks/use-date-format';
 import { useSidePanel } from '@/contexts/side-panel';
 import { StoryViewer } from '@/components/side-panel/story-viewer';
 import { trpc } from '@/main';
@@ -275,6 +276,7 @@ export const ChartDisplay = memo(function ChartDisplay({
 	showGrid = true,
 }: ChartDisplayProps) {
 	const { visibleSeries, hiddenSeriesKeys, handleToggleSeriesVisibility } = useSeriesVisibility(series);
+	const dateFormat = useDateFormat();
 
 	const chartConfig = useMemo((): ChartConfig => {
 		if (chartType === 'pie') {
@@ -282,14 +284,14 @@ export const ChartDisplay = memo(function ChartDisplay({
 			return [...values].reduce(
 				(acc, v, index) => {
 					acc[toKey(v)] = {
-						label: labelize(v),
+						label: labelize(v, dateFormat),
 						color: Colors[index % Colors.length],
 					};
 					return acc;
 				},
 				{
 					[xAxisKey]: {
-						label: labelize(xAxisKey),
+						label: labelize(xAxisKey, dateFormat),
 					},
 				} as ChartConfig,
 			);
@@ -297,12 +299,12 @@ export const ChartDisplay = memo(function ChartDisplay({
 
 		return series.reduce((acc, s, idx) => {
 			acc[s.data_key] = {
-				label: s.label || labelize(s.data_key),
+				label: s.label || labelize(s.data_key, dateFormat),
 				color: s.color || Colors[idx % Colors.length],
 			};
 			return acc;
 		}, {} as ChartConfig);
-	}, [series, xAxisKey, data, chartType]);
+	}, [series, xAxisKey, data, chartType, dateFormat]);
 
 	const colorFor = useMemo(
 		() =>
@@ -315,12 +317,17 @@ export const ChartDisplay = memo(function ChartDisplay({
 	const legendPayload = useMemo(
 		() =>
 			series.map((s, idx) => ({
-				value: s.label || labelize(s.data_key),
+				value: s.label || labelize(s.data_key, dateFormat),
 				dataKey: s.data_key,
 				color: s.color || Colors[idx % Colors.length],
 				isHidden: hiddenSeriesKeys.has(s.data_key),
 			})),
-		[series, hiddenSeriesKeys],
+		[series, hiddenSeriesKeys, dateFormat],
+	);
+
+	const labelFormatter = useMemo(
+		() => xAxisLabelFormatter ?? ((value: string) => labelize(value, dateFormat)),
+		[xAxisLabelFormatter, dateFormat],
 	);
 
 	const chartElement = useMemo(
@@ -332,7 +339,7 @@ export const ChartDisplay = memo(function ChartDisplay({
 				xAxisType,
 				series: visibleSeries,
 				colorFor,
-				labelFormatter: xAxisLabelFormatter,
+				labelFormatter,
 				showGrid,
 				margin: { top: 0, right: 0, bottom: 0, left: 0 },
 				children: [
@@ -341,7 +348,7 @@ export const ChartDisplay = memo(function ChartDisplay({
 						animationDuration={150}
 						animationEasing='linear'
 						allowEscapeViewBox={{ y: true, x: false }}
-						content={<ChartTooltipContent labelFormatter={(value) => labelize(value)} />}
+						content={<ChartTooltipContent labelFormatter={(value) => labelize(value, dateFormat)} />}
 					/>,
 					chartType !== 'pie' && (
 						<ChartLegend
@@ -360,11 +367,12 @@ export const ChartDisplay = memo(function ChartDisplay({
 			xAxisType,
 			visibleSeries,
 			colorFor,
-			xAxisLabelFormatter,
+			labelFormatter,
 			showGrid,
 			legendPayload,
 			handleToggleSeriesVisibility,
 			title,
+			dateFormat,
 		],
 	);
 

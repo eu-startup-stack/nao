@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 
+import { DateFormatSection } from '@/components/settings/date-format-section';
 import { EnvVarsSection } from '@/components/settings/env-vars-section';
 import { GitSyncSection } from '@/components/settings/git-sync-section';
 import { GoogleConfigSection } from '@/components/settings/google-credentials-section';
@@ -54,6 +55,8 @@ function ProjectTabPage() {
 					<GoogleConfigSection isAdmin={isAdmin} />
 				)}
 			</SettingsCard>
+
+			<DateFormatSection isAdmin={isAdmin} />
 		</>
 	);
 }

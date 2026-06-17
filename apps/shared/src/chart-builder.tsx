@@ -19,19 +19,17 @@ import {
 	YAxis,
 } from 'recharts';
 
+import { type DateFormatSettings, formatDateValue, isIsoDateLike } from './date';
 import * as displayChart from './tools/display-chart';
 
 export const DEFAULT_COLORS = ['#104e64', '#f54900', '#009689', '#ffb900', '#fe9a00'];
 
 const AXIS_TICK = { fontSize: 12 };
 
-export function labelize(key: unknown): string {
+export function labelize(key: unknown, dateFormat?: DateFormatSettings | null): string {
 	const str = String(key);
-	if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
-		const date = new Date(str);
-		if (!isNaN(date.getTime())) {
-			return date.toLocaleDateString('en-US', { timeZone: 'UTC' });
-		}
+	if (isIsoDateLike(str)) {
+		return formatDateValue(str, dateFormat);
 	}
 	return str.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }

@@ -522,7 +522,12 @@ class WhatsappService {
 			return null;
 		}
 		try {
-			const png = generateChartImage({ config: part.input, data: sqlOutput.rows });
+			const displaySettings = await projectQueries.getDisplaySettings(this._projectId);
+			const png = generateChartImage({
+				config: part.input,
+				data: sqlOutput.rows,
+				dateFormat: displaySettings.dateFormat,
+			});
 			const chartId = await chartImageQueries.saveChart(part.toolCallId, png.toString('base64'));
 			state.renderedChartIds.add(part.toolCallId);
 			return new URL(`c/${ctx.chatId}/${chartId}.png`, this._redirectUrl).toString();

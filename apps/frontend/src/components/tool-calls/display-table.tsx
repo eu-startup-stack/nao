@@ -1,6 +1,7 @@
 import { formatCellValue, isNumericColumn } from '@nao/shared/story-table-utils';
 import { useEffect, useMemo, useState } from 'react';
 import { TablePagination } from '@/components/ui/table-pagination';
+import { useDateFormat } from '@/hooks/use-date-format';
 import { cn } from '@/lib/utils';
 
 type TableRow = Record<string, unknown>;
@@ -26,6 +27,7 @@ export function TableDisplay({
 	showRowCount = true,
 	maxRowsBeforePagination = 100,
 }: TableDisplayProps) {
+	const dateFormat = useDateFormat();
 	const resolvedColumns = columns && columns.length > 0 ? columns : inferColumns(data);
 	const numericColumns = new Set(resolvedColumns.filter((column) => isNumericColumn(data, column)));
 	const hasRows = data.length > 0;
@@ -85,7 +87,7 @@ export function TableDisplay({
 												{isNull ? (
 													<span className='italic text-muted-foreground/60'>NULL</span>
 												) : (
-													formatCellValue(value)
+													formatCellValue(value, dateFormat)
 												)}
 											</td>
 										);

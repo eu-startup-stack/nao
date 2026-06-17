@@ -1,4 +1,5 @@
 import type { McpChartEmbedStoredConfig } from '@nao/shared';
+import type { DisplaySettings } from '@nao/shared/date';
 import type { CitationData, LlmProvider, UserPreferences } from '@nao/shared/types';
 import { BUDGET_PERIODS, FOLDER_SYSTEM_TYPE, FOLDER_VISIBILITY, SHARE_VISIBILITY, USER_ROLES } from '@nao/shared/types';
 import { type ProviderMetadata } from 'ai';
@@ -197,6 +198,7 @@ export const project = sqliteTable(
 		telegramSettings: text('telegram_settings', { mode: 'json' }).$type<TelegramSettings>(),
 		whatsappSettings: text('whatsapp_settings', { mode: 'json' }).$type<WhatsappSettings>(),
 		mcpEndpointSettings: text('mcp_endpoint_settings', { mode: 'json' }).$type<McpEndpointSettings>(),
+		displaySettings: text('display_settings', { mode: 'json' }).$type<DisplaySettings>(),
 
 		createdAt: integer('created_at', { mode: 'timestamp_ms' })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

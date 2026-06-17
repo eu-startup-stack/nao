@@ -276,6 +276,14 @@ export const sharedStoryRoutes = {
 				version.cacheSchedule,
 			);
 
-			return buildDownloadResponse(input.format, version.title, version.code, queryData);
+			const displaySettings = shared.projectId ? await projectQueries.getDisplaySettings(shared.projectId) : null;
+
+			return buildDownloadResponse(
+				input.format,
+				version.title,
+				version.code,
+				queryData,
+				displaySettings?.dateFormat,
+			);
 		}),
 };

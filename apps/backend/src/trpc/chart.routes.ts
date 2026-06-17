@@ -9,6 +9,7 @@ import {
 	getChartOwnerInfo,
 	updateChartConfig,
 } from '../queries/chart-image';
+import { getDisplaySettings } from '../queries/project.queries';
 import { projectProtectedProcedure, protectedProcedure } from './trpc';
 
 export const chartRoutes = {
@@ -18,10 +19,11 @@ export const chartRoutes = {
 				toolCallId: z.string(),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			const config = await getChartConfigByToolCallId(input.toolCallId);
 			const data = await getChartDataByQueryId(config.query_id);
-			const png = generateChartImage({ config, data });
+			const displaySettings = await getDisplaySettings(ctx.project.id);
+			const png = generateChartImage({ config, data, dateFormat: displaySettings.dateFormat });
 			return png.toString('base64');
 		}),
 

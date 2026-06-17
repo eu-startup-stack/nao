@@ -1,5 +1,10 @@
-export function formatCellValue(value: unknown): string {
+import { type DateFormatSettings, formatDateValue, isIsoDateLike } from './date';
+
+export function formatCellValue(value: unknown, dateFormat?: DateFormatSettings | null): string {
 	if (typeof value === 'string') {
+		if (isIsoDateLike(value)) {
+			return formatDateValue(value, dateFormat);
+		}
 		return value;
 	}
 	if (typeof value === 'number') {

@@ -1,3 +1,4 @@
+import { DATE_FORMAT_PRESETS } from '@nao/shared/date';
 import type { LlmProvider } from '@nao/shared/types';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod/v4';
@@ -772,6 +773,29 @@ export const projectRoutes = {
 		const memoryEnabled = await projectQueries.getProjectMemoryEnabled(ctx.project.id);
 		return { memoryEnabled };
 	}),
+
+	getDisplaySettings: projectProtectedProcedure.query(({ ctx }) => projectQueries.getDisplaySettings(ctx.project.id)),
+
+	updateDisplaySettings: adminProtectedProcedure
+		.input(
+			z.object({
+				dateFormat: z
+					.object({
+						preset: z.enum(DATE_FORMAT_PRESETS),
+						customFormat: z.string().trim().max(64).optional(),
+					})
+					.optional(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const next = await projectQueries.updateDisplaySettings(ctx.project.id, input);
+			posthog.capture(ctx.user.id, PostHogEvent.ProjectDisplaySettingsUpdated, {
+				project_id: ctx.project.id,
+				date_format_preset: next.dateFormat?.preset,
+				date_format_has_custom_pattern: Boolean(next.dateFormat?.customFormat),
+			});
+			return next;
+		}),
 
 	getProjectChats: adminProtectedProcedure
 		.input(
