@@ -191,18 +191,18 @@ export const DisplayChartToolCall = ({
 				) : (
 					<div></div>
 				)}
-				{storyIds.length > 0 && (
-					<Button
-						variant='outline'
-						className='rounded-full border gap-2 dark:bg-transparent'
-						size='sm'
-						onClick={handleAddToStory}
-					>
-						<FilePlus className='size-3' />
-						<span className='text-xs'>Add to story</span>
-					</Button>
-				)}
 				<div className='flex items-center gap-1'>
+					{storyIds.length > 0 && (
+						<Button
+							variant='outline'
+							className='rounded-full border gap-2 dark:bg-transparent'
+							size='sm'
+							onClick={handleAddToStory}
+						>
+							<FilePlus className='size-3' />
+							<span className='text-xs'>Add to story</span>
+						</Button>
+					)}
 					{config.chart_type !== 'pie' && config.x_axis_type === 'date' && (
 						<ChartRangeSelector
 							options={DATE_RANGE_OPTIONS}
