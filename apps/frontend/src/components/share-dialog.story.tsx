@@ -156,9 +156,7 @@ function CreateShareDialog({ open, onOpenChange, chatId, storySlug, intent = 'sh
 			<DialogContent className='sm:max-w-md'>
 				<DialogHeader className='gap-4'>
 					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription className='text-sm text-muted-foreground font-medium'>
-						{description}
-					</DialogDescription>
+					<DialogDescription className='font-medium'>{description}</DialogDescription>
 				</DialogHeader>
 
 				<div className='flex flex-col gap-4'>
@@ -287,7 +285,7 @@ function ManageShareDialog({
 			<DialogContent className='sm:max-w-md'>
 				<DialogHeader className='gap-4'>
 					<DialogTitle>Sharing Settings</DialogTitle>
-					<DialogDescription className='text-sm text-muted-foreground font-medium'>
+					<DialogDescription className='font-medium'>
 						This story is currently shared. Recipients always see the latest version.
 					</DialogDescription>
 				</DialogHeader>

@@ -157,7 +157,7 @@ function NegativeFeedbackDialog({ open, onOpenChange, onSubmit, isPending }: Neg
 						onKeyDown={handleKeyDown}
 						onChange={(e) => setExplanation(e.target.value)}
 						rows={4}
-						className='resize-none bg-panel border-none'
+						className='resize-none bg-panel'
 					/>
 
 					<Button variant='primary-gradient' className='rounded-full' type='submit' disabled={isPending}>

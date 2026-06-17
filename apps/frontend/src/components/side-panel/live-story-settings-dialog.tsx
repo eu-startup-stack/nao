@@ -166,10 +166,10 @@ export function LiveStorySettingsDialog({
 									manually using the refresh button.
 								</p>
 								<Select value={localPreset} onValueChange={handlePresetChange}>
-									<SelectTrigger className='w-full border-none bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
+									<SelectTrigger className='w-full bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
 										<SelectValue />
 									</SelectTrigger>
-									<SelectContent className='border-none bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
+									<SelectContent className='bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
 										{SCHEDULE_PRESETS.map((opt) => (
 											<SelectItem key={opt.value} value={opt.value}>
 												{opt.label}
@@ -196,7 +196,7 @@ export function LiveStorySettingsDialog({
 													}
 												}}
 												placeholder='e.g. every weekday at 9am'
-												className='h-8 text-sm flex-1 bg-panel border-none'
+												className='h-8 text-sm flex-1 bg-panel'
 												onKeyDown={(e) => {
 													if (e.key === 'Enter') {
 														handleNlConvert();
@@ -240,7 +240,7 @@ export function LiveStorySettingsDialog({
 											value={localCustomCron}
 											onChange={(e) => setLocalCustomCron(e.target.value)}
 											placeholder='*/5 * * * *'
-											className='h-8 text-sm font-mono bg-panel border-none'
+											className='h-8 text-sm font-mono bg-panel'
 										/>
 										<p className='text-[11px] text-muted-foreground'>
 											Format: minute hour day-of-month month day-of-week

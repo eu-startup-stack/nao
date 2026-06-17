@@ -129,7 +129,7 @@ export function ChartConfigEditDialog({
 						</label>
 						<Input
 							id='chart-title'
-							className='h-8 bg-panel border-none'
+							className='h-8 bg-panel'
 							value={draft.title}
 							onChange={(e) => setDraft((prev) => ({ ...prev, title: e.target.value }))}
 							placeholder='Chart title'
@@ -145,7 +145,7 @@ export function ChartConfigEditDialog({
 									setDraft((prev) => ({ ...prev, chart_type: value as displayChart.ChartType }))
 								}
 							>
-								<SelectTrigger className='w-full bg-panel border-none [&_svg]:text-foreground! [&_svg]:opacity-100!'>
+								<SelectTrigger className='w-full bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent className='border-none bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
@@ -169,7 +169,7 @@ export function ChartConfigEditDialog({
 									}))
 								}
 							>
-								<SelectTrigger className='w-full bg-panel border-none [&_svg]:text-foreground! [&_svg]:opacity-100!'>
+								<SelectTrigger className='w-full bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent className='border-none bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
@@ -220,7 +220,7 @@ export function ChartConfigEditDialog({
 										value={series.label ?? ''}
 										onChange={(e) => updateSeriesAt(index, { label: e.target.value || undefined })}
 										placeholder='Label (optional)'
-										className='h-8 rounded-lg text-sm bg-panel border-none'
+										className='h-8 rounded-lg text-sm bg-panel'
 									/>
 									<input
 										type='color'
@@ -334,10 +334,10 @@ function ColumnSelect({ value, columns, onChange }: ColumnSelectProps) {
 	const items = value && !columnsWithValues.includes(value) ? [value, ...columnsWithValues] : columnsWithValues;
 	return (
 		<Select value={value} onValueChange={onChange} disabled={items.length === 0}>
-			<SelectTrigger className='w-full text-sm bg-panel border-none [&_svg]:text-foreground! [&_svg]:opacity-100!'>
+			<SelectTrigger className='w-full text-sm bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
 				<SelectValue placeholder='Select column' />
 			</SelectTrigger>
-			<SelectContent className='border-none bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
+			<SelectContent className='bg-panel [&_svg]:text-foreground! [&_svg]:opacity-100!'>
 				{items.map((column) => (
 					<SelectItem key={column} value={column}>
 						{column}

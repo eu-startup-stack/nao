@@ -239,7 +239,7 @@ export function MemberPicker({
 				placeholder='Search members...'
 				value={search}
 				onChange={(e) => onSearchChange(e.target.value)}
-				className='h-8 text-sm bg-panel border-none pl-8'
+				className='h-8 text-sm bg-panel pl-8'
 			/>
 			<div className='max-h-48 overflow-y-auto'>
 				{isLoading ? (

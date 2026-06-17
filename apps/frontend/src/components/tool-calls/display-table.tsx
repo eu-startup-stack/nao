@@ -53,16 +53,18 @@ export function TableDisplay({
 				<table className='w-full min-w-max border-collapse text-xs'>
 					<thead className='sticky top-0 z-10 border-b bg-panel'>
 						<tr>
-							{['row_index', ...resolvedColumns].map((column) => (
+							<th className='shadow-[inset_-1px_0_0_0_var(--border)] last:shadow-none px-3 py-2 text-center font-medium whitespace-nowrap text-foreground w-4'>
+								1
+							</th>
+							{resolvedColumns.map((column) => (
 								<th
 									key={column}
 									className={cn(
 										'shadow-[inset_-1px_0_0_0_var(--border)] last:shadow-none px-3 py-2 text-left font-medium whitespace-nowrap text-foreground',
 										numericColumns.has(column) && 'text-right tabular-nums',
-										column === 'row_index' && 'text-center w-4',
 									)}
 								>
-									{column === 'row_index' ? '1' : column}
+									{column}
 								</th>
 							))}
 						</tr>
@@ -75,7 +77,12 @@ export function TableDisplay({
 									key={rowIndex}
 									className='border-b last:border-b-0 border-border/50 bg-background  hover:bg-accent/30'
 								>
-									{['row_index', ...resolvedColumns].map((column) => {
+									<td className='shadow-[inset_-1px_0_0_0_var(--border)] last:shadow-none px-3 py-1 align-top font-mono text-[11px] leading-5 whitespace-nowrap text-center w-4 bg-panel'>
+										<span className='px-1 py-2 font-[Geist] font-medium text-foreground'>
+											{pageIndex * pageSize + rowIndex + 2}
+										</span>
+									</td>
+									{resolvedColumns.map((column) => {
 										const value = row[column];
 										const isNull = value === null || value === undefined;
 										return (
@@ -84,14 +91,9 @@ export function TableDisplay({
 												className={cn(
 													'shadow-[inset_-1px_0_0_0_var(--border)] last:shadow-none px-3 py-1 align-top font-mono text-[11px] leading-5 whitespace-nowrap',
 													numericColumns.has(column) && 'text-right tabular-nums',
-													column === 'row_index' && 'text-center w-4 bg-panel',
 												)}
 											>
-												{column === 'row_index' ? (
-													<span className='px-1 py-2 font-[Geist] font-medium text-foreground'>
-														{pageIndex * pageSize + rowIndex + 2}
-													</span>
-												) : isNull ? (
+												{isNull ? (
 													<span className='italic text-muted-foreground/60'>NULL</span>
 												) : (
 													formatCellValue(value)
@@ -104,7 +106,7 @@ export function TableDisplay({
 						) : (
 							<tr>
 								<td
-									colSpan={Math.max(resolvedColumns.length, 1)}
+									colSpan={resolvedColumns.length + 1}
 									className='px-3 py-6 text-center text-sm text-muted-foreground'
 								>
 									{emptyLabel}

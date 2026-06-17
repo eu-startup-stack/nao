@@ -7,7 +7,7 @@ import { MarkdownTable } from '@/components/chat-messages/markdown-table';
 import { markdownPlugins } from '@/lib/markdown';
 
 const markdownComponents = {
-	table: ({ node }: any) => <MarkdownTable node={node} />,
+	table: ({ node, className }: any) => <MarkdownTable node={node} className={className} />,
 };
 
 interface SegmentRendererProps {

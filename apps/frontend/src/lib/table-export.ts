@@ -2,7 +2,12 @@ import { formatCellValue } from '@nao/shared/story-table-utils';
 
 type TableRow = Record<string, unknown>;
 
-const escapeCsvCell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value);
+const neutralizeFormula = (value: string) => (/^[=+\-@\t\r]/.test(value) ? `'${value}` : value);
+
+const escapeCsvCell = (value: string) => {
+	const safe = neutralizeFormula(value);
+	return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+};
 
 export function tableToCsv(columns: string[], rows: TableRow[]): string {
 	return [
@@ -12,7 +17,7 @@ export function tableToCsv(columns: string[], rows: TableRow[]): string {
 }
 
 export function tableToTsv(columns: string[], rows: TableRow[]): string {
-	const clean = (value: string) => value.replace(/[\t\n]/g, ' ');
+	const clean = (value: string) => neutralizeFormula(value).replace(/[\t\n]/g, ' ');
 	return [
 		columns.map(clean).join('\t'),
 		...rows.map((row) => columns.map((column) => clean(formatCellValue(row[column]))).join('\t')),

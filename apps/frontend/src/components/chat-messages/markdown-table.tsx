@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { DataTableCard } from '@/components/data-table-card';
+import { cn } from '@/lib/utils';
 
 interface HastNode {
 	type?: string;
@@ -8,14 +9,14 @@ interface HastNode {
 	children?: HastNode[];
 }
 
-export function MarkdownTable({ node }: { node?: HastNode }) {
+export function MarkdownTable({ node, className }: { node?: HastNode; className?: string }) {
 	const { columns, rows } = useMemo(() => extractTable(node), [node]);
 	const data = useMemo(
 		() => rows.map((cells) => Object.fromEntries(columns.map((column, i) => [column, cells[i] ?? '']))),
 		[columns, rows],
 	);
 
-	return <DataTableCard columns={columns} data={data} className='-mx-3 my-4' />;
+	return <DataTableCard columns={columns} data={data} className={cn('-mx-3 my-4', className)} />;
 }
 
 function extractTable(node?: HastNode): { columns: string[]; rows: string[][] } {
@@ -23,20 +24,35 @@ function extractTable(node?: HastNode): { columns: string[]; rows: string[][] } 
 		return { columns: [], rows: [] };
 	}
 
-	const thead = childByTag(node, 'thead');
-	const tbody = childByTag(node, 'tbody');
-	const headerRow = childByTag(thead, 'tr');
+	const allRows = collectRows(node);
+	if (allRows.length === 0) {
+		return { columns: [], rows: [] };
+	}
 
-	const columns = childrenByTag(headerRow, 'th').map((th) => textOf(th).trim());
-	const rows = childrenByTag(tbody, 'tr').map((tr) => childrenByTag(tr, 'td').map((td) => textOf(td).trim()));
+	const [headerRow, ...bodyRows] = allRows;
+	const columns = cellsOf(headerRow).map((cell) => textOf(cell).trim());
+	const rows = bodyRows.map((row) => cellsOf(row).map((cell) => textOf(cell).trim()));
 
 	return { columns, rows };
 }
 
-const childByTag = (node: HastNode | undefined, tag: string) => node?.children?.find((child) => child.tagName === tag);
+const collectRows = (node?: HastNode): HastNode[] => {
+	const rows: HastNode[] = [];
+	const walk = (current?: HastNode) => {
+		for (const child of current?.children ?? []) {
+			if (child.tagName === 'tr') {
+				rows.push(child);
+			} else {
+				walk(child);
+			}
+		}
+	};
+	walk(node);
+	return rows;
+};
 
-const childrenByTag = (node: HastNode | undefined, tag: string) =>
-	(node?.children ?? []).filter((child) => child.tagName === tag);
+const cellsOf = (row?: HastNode): HastNode[] =>
+	(row?.children ?? []).filter((child) => child.tagName === 'th' || child.tagName === 'td');
 
 const textOf = (node?: HastNode): string => {
 	if (!node) {

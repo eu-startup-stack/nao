@@ -22,7 +22,7 @@ export const AssistantTextWithCitation = memo(({ text, isStreaming }: { text: st
 				mode='streaming'
 				plugins={markdownPlugins}
 				components={{
-					table: ({ node }: any) => <MarkdownTable node={node} />,
+					table: ({ node, className }: any) => <MarkdownTable node={node} className={className} />,
 				}}
 			>
 				{strippedText}
@@ -38,7 +38,7 @@ export const AssistantTextWithCitation = memo(({ text, isStreaming }: { text: st
 			}}
 			literalTagContent={['citation-number']}
 			components={{
-				table: ({ node }: any) => <MarkdownTable node={node} />,
+				table: ({ node, className }: any) => <MarkdownTable node={node} className={className} />,
 				'citation-number': ({ id, column, children }: any) => {
 					return (
 						<span className='inline-block align-baseline mx-1'>

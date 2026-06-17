@@ -1,6 +1,7 @@
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 
 import { ResizableHandle } from '@/components/ui/resizable';
+import { useSidePanel } from '@/contexts/side-panel';
 import { useSidePanelResize } from '@/hooks/use-side-panel-resize';
 import { useIsMobile } from '@/hooks/use-is-mobile';
 import { cn } from '@/lib/utils';
@@ -23,7 +24,19 @@ export const SidePanel = memo(function SidePanel({
 	className,
 }: SidePanelProps) {
 	const isMobile = useIsMobile();
+	const { close } = useSidePanel();
 	useSidePanelResize(sidePanelRef, containerRef, resizeHandleRef, !isAnimating && !isMobile);
+
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== 'Escape' || event.defaultPrevented || isEditableTarget(event.target)) {
+				return;
+			}
+			close();
+		};
+		document.addEventListener('keydown', handleKeyDown);
+		return () => document.removeEventListener('keydown', handleKeyDown);
+	}, [close]);
 
 	if (isMobile) {
 		return (
@@ -50,3 +63,10 @@ export const SidePanel = memo(function SidePanel({
 		</div>
 	);
 });
+
+function isEditableTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) {
+		return false;
+	}
+	return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+}
