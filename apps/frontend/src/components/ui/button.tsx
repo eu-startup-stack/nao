@@ -163,6 +163,7 @@ function AuthSocialButton({
 			onClick={onClick}
 		>
 			<Icon className='size-4 text-foreground [&_path]:fill-current' />
+			<span>{label}</span>
 		</Button>
 	);
 }
