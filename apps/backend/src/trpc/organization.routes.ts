@@ -2,12 +2,12 @@ import { TRPCError } from '@trpc/server';
 import { hashPassword } from 'better-auth/crypto';
 import { z } from 'zod/v4';
 
+import { env } from '../env';
 import * as accountQueries from '../queries/account.queries';
 import * as orgQueries from '../queries/organization.queries';
 import * as userQueries from '../queries/user.queries';
 import { emailService } from '../services/email';
 import { addTeamMember } from '../services/team-member';
-import { env } from '../env';
 import { ORG_ROLES } from '../types/organization';
 import { buildResetPasswordEmail, buildUserAddedEmail } from '../utils/email-builders';
 import { protectedProcedure } from './trpc';

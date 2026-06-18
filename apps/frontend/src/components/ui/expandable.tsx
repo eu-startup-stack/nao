@@ -76,12 +76,7 @@ export const Expandable = ({
 						<AccordionTrigger
 							className={cn(
 								'flex-1 select-none flex items-baseline gap-2 py-0 overflow-hidden transition-opacity duration-150 hover:no-underline [&>svg:last-child]:hidden',
-								expanded ? 'opacity-100' : isBordered ? 'opacity-70' : 'opacity-50',
-								canExpand && !expanded
-									? 'cursor-pointer hover:opacity-90'
-									: canExpand
-										? 'cursor-pointer'
-										: '',
+								canExpand ? 'cursor-pointer' : '',
 							)}
 						>
 							<div className='size-3 flex items-center justify-center shrink-0 self-center'>{icon}</div>
