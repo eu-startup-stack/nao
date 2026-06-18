@@ -12,6 +12,11 @@ export const getOrganizationById = async (id: string): Promise<DBOrganization | 
 	return org ?? null;
 };
 
+export const getOrganizationBySlug = async (slug: string): Promise<DBOrganization | null> => {
+	const [org] = await db.select().from(s.organization).where(eq(s.organization.slug, slug)).execute();
+	return org ?? null;
+};
+
 export const getFirstOrganization = async (): Promise<DBOrganization | null> => {
 	const [org] = await db.select().from(s.organization).limit(1).execute();
 	return org ?? null;
@@ -34,6 +39,14 @@ export const getOrgMember = async (orgId: string, userId: string): Promise<DBOrg
 export const addOrgMember = async (member: NewOrgMember): Promise<DBOrgMember> => {
 	const [created] = await db.insert(s.orgMember).values(member).returning().execute();
 	return created;
+};
+
+export const addOrgMemberIfMissing = async (member: NewOrgMember): Promise<void> => {
+	const existingMember = await getOrgMember(member.orgId, member.userId);
+	if (existingMember) {
+		return;
+	}
+	await addOrgMember(member);
 };
 
 export const getUserOrgMembership = async (
@@ -79,13 +92,35 @@ export const updateGoogleSettings = async (
 
 export const getGoogleConfig = async () => {
 	const org = await getFirstOrganization();
+	return buildGoogleConfig(org, true);
+};
+
+export const getGoogleConfigForOrganization = async (orgId: string, includeEnvFallback = false) => {
+	const org = await getOrganizationById(orgId);
+	return buildGoogleConfig(org, includeEnvFallback);
+};
+
+export const getGoogleConfigForOrganizationSlug = async (slug: string, includeEnvFallback = false) => {
+	const org = await getOrganizationBySlug(slug);
 	return {
-		clientId: org?.googleClientId || env.GOOGLE_CLIENT_ID || '',
-		clientSecret: org?.googleClientSecret || env.GOOGLE_CLIENT_SECRET || '',
-		authDomains: org?.googleAuthDomains || env.GOOGLE_AUTH_DOMAINS || '',
-		usingDbOverride: !!(org?.googleClientId && org?.googleClientSecret),
+		org,
+		config: buildGoogleConfig(org, includeEnvFallback),
 	};
 };
+
+function buildGoogleConfig(org: DBOrganization | null, includeEnvFallback: boolean) {
+	const envClientId = includeEnvFallback ? env.GOOGLE_CLIENT_ID : undefined;
+	const envClientSecret = includeEnvFallback ? env.GOOGLE_CLIENT_SECRET : undefined;
+	const envAuthDomains = includeEnvFallback ? env.GOOGLE_AUTH_DOMAINS : undefined;
+
+	return {
+		orgId: org?.id,
+		clientId: org?.googleClientId || envClientId || '',
+		clientSecret: org?.googleClientSecret || envClientSecret || '',
+		authDomains: org?.googleAuthDomains || envAuthDomains || '',
+		usingDbOverride: !!(org?.googleClientId && org?.googleClientSecret),
+	};
+}
 
 export const getOrCreateDefaultOrganization = async (): Promise<DBOrganization> => {
 	const existing = await getFirstOrganization();

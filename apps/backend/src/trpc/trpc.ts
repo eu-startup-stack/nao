@@ -13,11 +13,12 @@ export type MiddlewareFunction = Parameters<typeof t.procedure.use>[0];
 
 export const createContext = async (opts: CreateFastifyContextOptions) => {
 	const headers = convertHeaders(opts.req.headers);
-	const auth = await getAuth();
+	const auth = await getAuth(headers);
 	const session = await auth?.api.getSession({ headers });
 	return {
 		session,
 		selectedProjectId: headers.get('x-nao-project-id'),
+		authHost: headers.get('x-forwarded-host') ?? headers.get('host'),
 	};
 };
 

@@ -44,7 +44,7 @@ function ProjectTabPage() {
 
 			<EnvVarsSection isAdmin={isAdmin} />
 
-			<SettingsCard title='Google Credentials'>
+			<SettingsCard title='Google SSO'>
 				{project.isLoading ? (
 					<div className='space-y-2'>
 						<Skeleton className='h-4 w-40' />

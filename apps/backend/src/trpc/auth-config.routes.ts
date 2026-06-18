@@ -2,26 +2,36 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod/v4';
 
 import { updateAuth } from '../auth';
-import { env } from '../env';
+import { env, isCloud } from '../env';
 import * as orgQueries from '../queries/organization.queries';
 import { emailService } from '../services/email';
 import { isGithubSsoEnabled } from '../services/github';
 import { hasFeature, LICENSE_FEATURES } from '../services/license.service';
 import { isMicrosoftConfigured } from '../services/microsoft-auth.service';
 import { getOidcProviderId, isOidcConfigured } from '../services/oidc-auth.service';
+import { resolveTenantSlugFromHost } from '../utils/tenant';
 import { adminProtectedProcedure, publicProcedure } from './trpc';
 
 export const authConfigRoutes = {
 	google: {
-		isSetup: publicProcedure.query(async () => {
-			if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
-				return true;
+		isSetup: publicProcedure.query(async ({ ctx }) => {
+			const tenantSlug = resolveTenantSlugFromHost(ctx.authHost);
+			if (tenantSlug) {
+				const { config } = await orgQueries.getGoogleConfigForOrganizationSlug(tenantSlug, false);
+				return !!(config.clientId && config.clientSecret);
 			}
-			const org = await orgQueries.getFirstOrganization();
-			return !!(org?.googleClientId && org?.googleClientSecret);
-		}),
-		getSettings: adminProtectedProcedure.query(async () => {
+
+			if (isCloud) {
+				return false;
+			}
 			const config = await orgQueries.getGoogleConfig();
+			return !!(config.clientId && config.clientSecret);
+		}),
+		getSettings: adminProtectedProcedure.query(async ({ ctx }) => {
+			if (!ctx.project.orgId) {
+				throw new TRPCError({ code: 'NOT_FOUND', message: 'No organization found for project' });
+			}
+			const config = await orgQueries.getGoogleConfigForOrganization(ctx.project.orgId, !isCloud);
 			return { ...config };
 		}),
 		updateSettings: adminProtectedProcedure
@@ -32,14 +42,17 @@ export const authConfigRoutes = {
 					authDomains: z.string(),
 				}),
 			)
-			.mutation(async ({ input }) => {
-				const org = await orgQueries.getFirstOrganization();
+			.mutation(async ({ input, ctx }) => {
+				if (!ctx.project.orgId) {
+					throw new TRPCError({ code: 'NOT_FOUND', message: 'No organization found for project' });
+				}
+				const org = await orgQueries.getOrganizationById(ctx.project.orgId);
 				if (!org) {
 					throw new TRPCError({ code: 'NOT_FOUND', message: 'No organization found' });
 				}
 				await orgQueries.updateGoogleSettings(org.id, {
-					googleClientId: input.clientId || null,
-					googleClientSecret: input.clientSecret || null,
+					googleClientId: input.clientId || org.googleClientId,
+					googleClientSecret: input.clientSecret || org.googleClientSecret,
 					googleAuthDomains: input.authDomains || null,
 				});
 				updateAuth();
