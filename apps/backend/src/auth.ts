@@ -32,43 +32,23 @@ import {
 	isSocialProviderOidc,
 } from './services/oidc-auth.service';
 import { buildForgotPasswordEmail } from './utils/email-builders';
-import { getRequestHost, getTenantOrigin, resolveTenantSlugFromHost } from './utils/tenant';
 import { buildGithubAllowlist, isEmailDomainAllowed, resolveProviderId } from './utils/utils';
 
-type GoogleConfig = Awaited<ReturnType<typeof orgQueries.getGoogleConfig>>;
 type MetadataHandler = (request: Request) => Promise<Response>;
 
 let defaultAuthPromise: Promise<Awaited<ReturnType<typeof createAuthInstance>>> | null = null;
-const tenantAuthPromises = new Map<string, Promise<Awaited<ReturnType<typeof createAuthInstance>>>>();
 let authServerMetadataPromise: Promise<MetadataHandler> | null = null;
 let openIdConfigMetadataPromise: Promise<MetadataHandler> | null = null;
 
-export const getAuth = async (headers?: Headers | null) => {
-	const tenantContext = headers ? await getTenantAuthContext(headers) : null;
-
-	if (!tenantContext) {
-		if (!defaultAuthPromise) {
-			defaultAuthPromise = orgQueries
-				.getGoogleConfig()
-				.then((config) => createAuthInstance(config, env.BETTER_AUTH_URL));
-		}
-		return defaultAuthPromise;
+export const getAuth = async () => {
+	if (!defaultAuthPromise) {
+		defaultAuthPromise = createAuthInstance(env.BETTER_AUTH_URL);
 	}
-
-	const cacheKey = `${tenantContext.cacheKey}:${tenantContext.baseURL}`;
-	const cached = tenantAuthPromises.get(cacheKey);
-	if (cached) {
-		return cached;
-	}
-
-	const promise = createAuthInstance(tenantContext.googleConfig, tenantContext.baseURL);
-	tenantAuthPromises.set(cacheKey, promise);
-	return promise;
+	return defaultAuthPromise;
 };
 
 export function updateAuth() {
 	defaultAuthPromise = null;
-	tenantAuthPromises.clear();
 	authServerMetadataPromise = null;
 	openIdConfigMetadataPromise = null;
 }
@@ -105,19 +85,26 @@ export function getOpenIdConfigMetadataHandler(): Promise<MetadataHandler> {
 	return openIdConfigMetadataPromise;
 }
 
-async function createAuthInstance(googleConfig: GoogleConfig, baseURL: string) {
+async function createAuthInstance(baseURL: string) {
 	const githubAllowlist = buildGithubAllowlist(env.GITHUB_ALLOWED_USERS);
 	const disableEmailSignUp = await shouldDisableEmailSignUp();
 
 	const ssoPlugins: BetterAuthPlugin[] = [];
 
-	const socialProviders: Parameters<typeof betterAuth>[0]['socialProviders'] = {
-		google: {
+	// Cloud uses a single deployment-level Google credential; self-hosted reads the
+	// org-level credential (with env fallback) so existing instances keep working.
+	const googleConfig = await orgQueries.getGoogleConfig();
+	const googleClientId = isCloud ? env.GOOGLE_CLIENT_ID : googleConfig.clientId;
+	const googleClientSecret = isCloud ? env.GOOGLE_CLIENT_SECRET : googleConfig.clientSecret;
+
+	const socialProviders: Parameters<typeof betterAuth>[0]['socialProviders'] = {};
+	if (googleClientId && googleClientSecret) {
+		socialProviders.google = {
 			prompt: 'select_account',
-			clientId: googleConfig.clientId,
-			clientSecret: googleConfig.clientSecret,
-		},
-	};
+			clientId: googleClientId,
+			clientSecret: googleClientSecret,
+		};
+	}
 
 	const githubConfig = env.GITHUB_SSO ? githubOAuthConfig() : null;
 	if (githubConfig) {
@@ -205,7 +192,11 @@ async function createAuthInstance(googleConfig: GoogleConfig, baseURL: string) {
 					before: async (user, ctx) => {
 						const providerId = resolveProviderId(ctx);
 
-						if (providerId === 'google' && !isEmailDomainAllowed(user.email, googleConfig.authDomains)) {
+						if (
+							!isCloud &&
+							providerId === 'google' &&
+							!isEmailDomainAllowed(user.email, googleConfig.authDomains)
+						) {
 							throw new APIError('FORBIDDEN', {
 								message: 'This email domain is not authorized to access this application.',
 							});
@@ -231,9 +222,13 @@ async function createAuthInstance(googleConfig: GoogleConfig, baseURL: string) {
 							(ssoEnabled && (isSocialProviderMicrosoft(providerId) || isSocialProviderOidc(providerId)));
 
 						if (isCloud) {
-							if (providerId === 'google' && googleConfig.orgId) {
+							const matchedOrg =
+								providerId === 'google'
+									? await orgQueries.findOrganizationByEmailDomain(user.email)
+									: null;
+							if (matchedOrg) {
 								await orgQueries.addOrgMemberIfMissing({
-									orgId: googleConfig.orgId,
+									orgId: matchedOrg.id,
 									userId: user.id,
 									role: env.DEFAULT_USER_ROLE,
 								});
@@ -258,25 +253,6 @@ async function createAuthInstance(googleConfig: GoogleConfig, baseURL: string) {
 			},
 		},
 	});
-}
-
-async function getTenantAuthContext(headers: Headers): Promise<{
-	cacheKey: string;
-	baseURL: string;
-	googleConfig: GoogleConfig;
-} | null> {
-	const host = getRequestHost(headers);
-	const tenantSlug = resolveTenantSlugFromHost(host);
-	if (!tenantSlug) {
-		return null;
-	}
-
-	const { org, config } = await orgQueries.getGoogleConfigForOrganizationSlug(tenantSlug, false);
-	return {
-		cacheKey: org ? `org:${org.id}` : `unknown:${tenantSlug}`,
-		baseURL: getTenantOrigin(headers) ?? env.BETTER_AUTH_URL,
-		googleConfig: config,
-	};
 }
 
 async function shouldDisableEmailSignUp(): Promise<boolean> {

@@ -9,20 +9,15 @@ import { isGithubSsoEnabled } from '../services/github';
 import { hasFeature, LICENSE_FEATURES } from '../services/license.service';
 import { isMicrosoftConfigured } from '../services/microsoft-auth.service';
 import { getOidcProviderId, isOidcConfigured } from '../services/oidc-auth.service';
-import { resolveTenantSlugFromHost } from '../utils/tenant';
 import { adminProtectedProcedure, publicProcedure } from './trpc';
 
 export const authConfigRoutes = {
 	google: {
-		isSetup: publicProcedure.query(async ({ ctx }) => {
-			const tenantSlug = resolveTenantSlugFromHost(ctx.authHost);
-			if (tenantSlug) {
-				const { config } = await orgQueries.getGoogleConfigForOrganizationSlug(tenantSlug, false);
-				return !!(config.clientId && config.clientSecret);
-			}
-
+		isSetup: publicProcedure.query(async () => {
+			// Cloud uses a single deployment-level credential; org membership is then
+			// resolved from the user's email domain after sign-in.
 			if (isCloud) {
-				return false;
+				return !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 			}
 			const config = await orgQueries.getGoogleConfig();
 			return !!(config.clientId && config.clientSecret);

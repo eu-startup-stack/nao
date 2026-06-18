@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockEnv: Record<string, unknown> = {};
 let mockSsoEnabled = true;
 const mockGetGoogleConfig = vi.fn();
-const mockGetGoogleConfigForOrganizationSlug = vi.fn();
 
 vi.mock('../src/env', () => ({
 	get env() {
@@ -21,7 +20,6 @@ vi.mock('../src/auth', () => ({
 vi.mock('../src/queries/organization.queries', () => ({
 	getFirstOrganization: vi.fn().mockResolvedValue(null),
 	getGoogleConfig: mockGetGoogleConfig,
-	getGoogleConfigForOrganizationSlug: mockGetGoogleConfigForOrganizationSlug,
 }));
 
 vi.mock('../src/services/email', () => ({
@@ -44,15 +42,6 @@ describe('authConfigRoutes.oidc.getConfig', () => {
 			clientId: '',
 			clientSecret: '',
 			authDomains: '',
-		});
-		mockGetGoogleConfigForOrganizationSlug.mockReset();
-		mockGetGoogleConfigForOrganizationSlug.mockResolvedValue({
-			org: null,
-			config: {
-				clientId: '',
-				clientSecret: '',
-				authDomains: '',
-			},
 		});
 	});
 
@@ -123,39 +112,32 @@ describe('authConfigRoutes.google.isSetup', () => {
 		mockEnv.BETTER_AUTH_URL = 'https://nao.cloud';
 		mockGetGoogleConfig.mockReset();
 		mockGetGoogleConfig.mockResolvedValue({
-			clientId: 'global-client',
-			clientSecret: 'global-secret',
+			clientId: 'org-client',
+			clientSecret: 'org-secret',
 			authDomains: '',
-		});
-		mockGetGoogleConfigForOrganizationSlug.mockReset();
-		mockGetGoogleConfigForOrganizationSlug.mockResolvedValue({
-			org: { id: 'org-acme' },
-			config: {
-				clientId: 'acme-client',
-				clientSecret: 'acme-secret',
-				authDomains: 'acme.com',
-			},
 		});
 	});
 
-	it('does not expose Google SSO on the cloud apex host', async () => {
+	it('exposes Google SSO in cloud when deployment credentials are set', async () => {
 		mockEnv.NAO_MODE = 'cloud';
+		mockEnv.GOOGLE_CLIENT_ID = 'deployment-client';
+		mockEnv.GOOGLE_CLIENT_SECRET = 'deployment-secret';
 
-		await expect(callGoogleIsSetup('nao.cloud')).resolves.toBe(false);
+		await expect(callGoogleIsSetup()).resolves.toBe(true);
 		expect(mockGetGoogleConfig).not.toHaveBeenCalled();
 	});
 
-	it('uses the tenant subdomain Google config', async () => {
+	it('hides Google SSO in cloud when deployment credentials are missing', async () => {
 		mockEnv.NAO_MODE = 'cloud';
 
-		await expect(callGoogleIsSetup('acme.nao.cloud')).resolves.toBe(true);
-		expect(mockGetGoogleConfigForOrganizationSlug).toHaveBeenCalledWith('acme', false);
+		await expect(callGoogleIsSetup()).resolves.toBe(false);
+		expect(mockGetGoogleConfig).not.toHaveBeenCalled();
 	});
 
-	it('falls back to global Google config outside cloud tenant hosts', async () => {
+	it('uses the org Google config in self-hosted mode', async () => {
 		mockEnv.NAO_MODE = 'self-hosted';
 
-		await expect(callGoogleIsSetup('localhost:5005')).resolves.toBe(true);
+		await expect(callGoogleIsSetup()).resolves.toBe(true);
 		expect(mockGetGoogleConfig).toHaveBeenCalled();
 	});
 });
@@ -174,14 +156,14 @@ async function callGetConfig() {
 	return null;
 }
 
-async function callGoogleIsSetup(authHost: string) {
+async function callGoogleIsSetup() {
 	vi.resetModules();
 	const { authConfigRoutes } = await import('../src/trpc/auth-config.routes');
 	const procedure = authConfigRoutes.google.isSetup;
 	// @ts-expect-error accessing internal tRPC structure for testing
 	const resolver = procedure._def.query ?? procedure._def.resolver;
 	if (resolver) {
-		return resolver({ ctx: { authHost }, input: undefined });
+		return resolver({ ctx: {}, input: undefined });
 	}
 	return null;
 }

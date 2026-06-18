@@ -38,6 +38,17 @@ export const buildGithubAllowlist = (allowedUsers?: string): Set<string> => {
 	return allowed;
 };
 
+export const normalizeEmailDomains = (raw: string): string[] => {
+	const seen = new Set<string>();
+	for (const entry of raw.split(',')) {
+		const domain = entry.trim().toLowerCase().replace(/^@/, '');
+		if (domain) {
+			seen.add(domain);
+		}
+	}
+	return [...seen];
+};
+
 export const isEmailDomainAllowed = (userEmail: string, authDomains?: string) => {
 	if (authDomains) {
 		const allowedDomains = authDomains.split(',').map((domain) => domain.trim().toLowerCase());

@@ -1,4 +1,4 @@
-import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 
 import s, { DBOrganization, DBOrgMember, NewOrganization, NewOrgMember } from '../db/abstractSchema';
 import { db } from '../db/db';
@@ -100,13 +100,35 @@ export const getGoogleConfigForOrganization = async (orgId: string, includeEnvFa
 	return buildGoogleConfig(org, includeEnvFallback);
 };
 
-export const getGoogleConfigForOrganizationSlug = async (slug: string, includeEnvFallback = false) => {
-	const org = await getOrganizationBySlug(slug);
-	return {
-		org,
-		config: buildGoogleConfig(org, includeEnvFallback),
-	};
+/**
+ * Cloud mode: find the organization that claims a user's email domain.
+ * Domains are stored per-organization as a comma-separated list in `googleAuthDomains`.
+ * The first organization whose list contains the domain wins.
+ */
+export const findOrganizationByEmailDomain = async (email: string): Promise<DBOrganization | null> => {
+	const domain = email.split('@').at(1)?.trim().toLowerCase();
+	if (!domain) {
+		return null;
+	}
+
+	const orgs = await db.select().from(s.organization).where(isNotNull(s.organization.googleAuthDomains)).execute();
+
+	return orgs.find((org) => parseEmailDomains(org.googleAuthDomains).includes(domain)) ?? null;
 };
+
+export const updateOrganizationEmailDomains = async (orgId: string, domains: string | null): Promise<void> => {
+	await db.update(s.organization).set({ googleAuthDomains: domains }).where(eq(s.organization.id, orgId)).execute();
+};
+
+function parseEmailDomains(domains: string | null): string[] {
+	if (!domains) {
+		return [];
+	}
+	return domains
+		.split(',')
+		.map((domain) => domain.trim().toLowerCase())
+		.filter(Boolean);
+}
 
 function buildGoogleConfig(org: DBOrganization | null, includeEnvFallback: boolean) {
 	const envClientId = includeEnvFallback ? env.GOOGLE_CLIENT_ID : undefined;

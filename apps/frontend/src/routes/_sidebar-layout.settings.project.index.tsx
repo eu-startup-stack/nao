@@ -16,7 +16,9 @@ export const Route = createFileRoute('/_sidebar-layout/settings/project/')({
 
 function ProjectTabPage() {
 	const project = useQuery(trpc.project.getCurrent.queryOptions());
+	const systemConfig = useQuery(trpc.system.getPublicConfig.queryOptions());
 	const { isAdmin } = usePermissions();
+	const isCloud = systemConfig.data?.naoMode === 'cloud';
 
 	return (
 		<>
@@ -44,16 +46,18 @@ function ProjectTabPage() {
 
 			<EnvVarsSection isAdmin={isAdmin} />
 
-			<SettingsCard title='Google SSO'>
-				{project.isLoading ? (
-					<div className='space-y-2'>
-						<Skeleton className='h-4 w-40' />
-						<Skeleton className='h-4 w-full max-w-xs' />
-					</div>
-				) : (
-					<GoogleConfigSection isAdmin={isAdmin} />
-				)}
-			</SettingsCard>
+			{!isCloud && (
+				<SettingsCard title='Google SSO'>
+					{project.isLoading ? (
+						<div className='space-y-2'>
+							<Skeleton className='h-4 w-40' />
+							<Skeleton className='h-4 w-full max-w-xs' />
+						</div>
+					) : (
+						<GoogleConfigSection isAdmin={isAdmin} />
+					)}
+				</SettingsCard>
+			)}
 		</>
 	);
 }

@@ -15,6 +15,7 @@ import {
 } from '@/components/settings/team';
 import { GitHubRepoPicker } from '@/components/settings/github-repo-picker';
 import { OrgApiKeys } from '@/components/settings/org-api-keys';
+import { OrgSignInDomains } from '@/components/settings/org-signin-domains';
 import { Badge } from '@/components/ui/badge';
 import { SettingsCard, SettingsPageWrapper } from '@/components/ui/settings-card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,9 @@ function OrganizationPage() {
 	const org = useQuery(trpc.organization.get.queryOptions());
 	const projectsQuery = useQuery(trpc.organization.getProjects.queryOptions());
 	const membersQuery = useQuery(trpc.organization.getMembers.queryOptions());
+	const systemConfig = useQuery(trpc.system.getPublicConfig.queryOptions());
 	const { isOrgAdmin } = usePermissions();
+	const isCloud = systemConfig.data?.naoMode === 'cloud';
 
 	const githubAvailable = useQuery(trpc.github.isAvailable.queryOptions());
 	const githubStatus = useQuery({
@@ -194,6 +197,7 @@ function OrganizationPage() {
 						</div>
 					)}
 				</SettingsCard>
+				{isCloud && <OrgSignInDomains isAdmin={isOrgAdmin} />}
 				<OrgApiKeys isAdmin={isOrgAdmin} />
 			</div>
 

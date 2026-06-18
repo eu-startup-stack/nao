@@ -29,7 +29,7 @@ export const authRoutes = async (app: App) => {
 					body: serializeBody(request.body, request.headers['content-type']),
 				});
 				// Process authentication request
-				const auth = await getAuth(headers);
+				const auth = await getAuth();
 				const response = await auth.handler(req);
 				// Forward response to client
 				reply.status(response.status);

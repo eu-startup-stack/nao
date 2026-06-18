@@ -60,7 +60,7 @@ export function GoogleConfigSection({ isAdmin }: GoogleConfigSectionProps) {
 					</div>
 					<div className='grid gap-0.5'>
 						<span className='text-xs text-muted-foreground'>
-							Used when users log in from this organization&apos;s subdomain.
+							Lets users sign in with their Google account.
 						</span>
 						<span className='text-xs font-mono text-muted-foreground'>
 							Client ID: {maskCredential(settings?.clientId || '')}
