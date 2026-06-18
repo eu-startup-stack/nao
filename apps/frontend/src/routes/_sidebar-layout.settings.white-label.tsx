@@ -21,6 +21,8 @@ export const Route = createFileRoute('/_sidebar-layout/settings/white-label')({
 
 const MAX_BYTES = 512 * 1024;
 const ACCEPTED_TYPES = 'image/png,image/jpeg,image/svg+xml,image/webp,image/gif,image/x-icon,image/vnd.microsoft.icon';
+const HEX_COLOR_REGEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const DEFAULT_BRAND_COLOR = '#522bff';
 
 type AssetKind = 'logo' | 'favicon';
 
@@ -38,22 +40,25 @@ function WhiteLabelPage() {
 
 	const [appName, setAppName] = useState('');
 	const [tabTitle, setTabTitle] = useState('');
+	const [primaryColor, setPrimaryColor] = useState('');
 	const [pending, setPending] = useState<Partial<Record<AssetKind, PendingAsset | null>>>({});
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
-	const lastSyncedNamesRef = useRef({ appName: '', tabTitle: '' });
+	const lastSyncedNamesRef = useRef({ appName: '', tabTitle: '', primaryColor: '' });
 
 	useEffect(() => {
 		const previousNames = lastSyncedNamesRef.current;
 		const nextNames = {
 			appName: branding.appName ?? '',
 			tabTitle: branding.tabTitle ?? '',
+			primaryColor: branding.primaryColor ?? '',
 		};
 
 		setAppName((current) => (current === previousNames.appName ? nextNames.appName : current));
 		setTabTitle((current) => (current === previousNames.tabTitle ? nextNames.tabTitle : current));
+		setPrimaryColor((current) => (current === previousNames.primaryColor ? nextNames.primaryColor : current));
 		lastSyncedNamesRef.current = nextNames;
-	}, [branding.appName, branding.tabTitle]);
+	}, [branding.appName, branding.tabTitle, branding.primaryColor]);
 
 	const updateMutation = useMutation({
 		...trpc.branding.update.mutationOptions(),
@@ -62,6 +67,7 @@ function WhiteLabelPage() {
 			setSuccess(true);
 			setAppName(variables.appName ?? '');
 			setTabTitle(variables.tabTitle ?? '');
+			setPrimaryColor(variables.primaryColor ?? '');
 			setPending({});
 			await queryClient.invalidateQueries({ queryKey: trpc.branding.getPublic.queryKey() });
 		},
@@ -91,9 +97,16 @@ function WhiteLabelPage() {
 	const clearPending = (kind: AssetKind) => setPending((p) => ({ ...p, [kind]: undefined }));
 
 	const handleSave = () => {
+		const trimmedColor = primaryColor.trim();
+		if (trimmedColor && !HEX_COLOR_REGEX.test(trimmedColor)) {
+			setSuccess(false);
+			setError('Brand color must be a hex value, e.g. #522bff.');
+			return;
+		}
 		updateMutation.mutate({
 			appName: appName.trim() ? appName.trim() : null,
 			tabTitle: tabTitle.trim() ? tabTitle.trim() : null,
+			primaryColor: trimmedColor ? trimmedColor : null,
 			...(pending.logo !== undefined
 				? {
 						logo: pending.logo ? { data: pending.logo.data, mediaType: pending.logo.mediaType } : null,
@@ -112,6 +125,7 @@ function WhiteLabelPage() {
 	const hasChanges =
 		appName !== (branding.appName ?? '') ||
 		tabTitle !== (branding.tabTitle ?? '') ||
+		primaryColor !== (branding.primaryColor ?? '') ||
 		pending.logo !== undefined ||
 		pending.favicon !== undefined;
 
@@ -128,8 +142,8 @@ function WhiteLabelPage() {
 						</Badge>
 					</div>
 					<p className='text-sm text-muted-foreground mt-1'>
-						Replace the nao name, logo and favicon with your own branding. Visible to every user of this
-						instance.
+						Replace the nao name, logo, favicon and main color with your own branding. Visible to every user
+						of this instance.
 					</p>
 				</div>
 
@@ -180,6 +194,19 @@ function WhiteLabelPage() {
 					/>
 				</SettingsCard>
 
+				<SettingsCard
+					title='Brand color'
+					description='The main color used for buttons, links and accents across the app.'
+				>
+					<ColorInput
+						label='Main color'
+						value={primaryColor}
+						onChange={setPrimaryColor}
+						disabled={disabled}
+						helper='Leave empty to keep the default nao color.'
+					/>
+				</SettingsCard>
+
 				{error && (
 					<div className='text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md border border-destructive/30'>
 						{error}
@@ -199,6 +226,7 @@ function WhiteLabelPage() {
 						onClick={() => {
 							setAppName(branding.appName ?? '');
 							setTabTitle(branding.tabTitle ?? '');
+							setPrimaryColor(branding.primaryColor ?? '');
 							setPending({});
 						}}
 					>
@@ -264,6 +292,49 @@ function LabeledInput({
 				onChange={(e) => onChange(e.target.value)}
 				disabled={disabled}
 			/>
+			{helper && <p className='text-xs text-muted-foreground'>{helper}</p>}
+		</div>
+	);
+}
+
+function ColorInput({
+	label,
+	helper,
+	value,
+	onChange,
+	disabled,
+}: {
+	label: string;
+	helper?: string;
+	value: string;
+	onChange: (v: string) => void;
+	disabled?: boolean;
+}) {
+	const swatch = HEX_COLOR_REGEX.test(value.trim()) ? value.trim() : DEFAULT_BRAND_COLOR;
+
+	return (
+		<div className='flex flex-col gap-1.5'>
+			<label className='text-sm font-medium text-foreground'>{label}</label>
+			<div className='flex items-center gap-2'>
+				<input
+					type='color'
+					value={swatch}
+					disabled={disabled}
+					onChange={(e) => onChange(e.target.value)}
+					className={cn(
+						'size-9 rounded-md border border-input bg-background p-0.5 cursor-pointer shrink-0',
+						disabled && 'pointer-events-none opacity-50',
+					)}
+					aria-label={label}
+				/>
+				<Input
+					value={value}
+					placeholder={DEFAULT_BRAND_COLOR}
+					onChange={(e) => onChange(e.target.value)}
+					disabled={disabled}
+					className='font-mono max-w-40'
+				/>
+			</div>
 			{helper && <p className='text-xs text-muted-foreground'>{helper}</p>}
 		</div>
 	);

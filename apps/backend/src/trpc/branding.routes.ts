@@ -22,11 +22,17 @@ const assetSchema = z
 	})
 	.nullable();
 
+const hexColorSchema = z
+	.string()
+	.trim()
+	.regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'Must be a hex color, e.g. #522bff.');
+
 const updateSchema = z.object({
 	appName: z.string().trim().max(64).nullable().optional(),
 	tabTitle: z.string().trim().max(64).nullable().optional(),
 	logo: assetSchema.optional(),
 	favicon: assetSchema.optional(),
+	primaryColor: hexColorSchema.nullable().optional(),
 });
 
 const assetKindSchema = z.enum(['logo', 'favicon']);
@@ -51,6 +57,7 @@ export const brandingRoutes = {
 			tabTitle: branding?.tabTitle ?? null,
 			hasLogo: Boolean(branding?.logo),
 			hasFavicon: Boolean(branding?.favicon),
+			primaryColor: branding?.primaryColor ?? null,
 			updatedAt: branding?.updatedAt?.getTime() ?? null,
 		};
 	}),

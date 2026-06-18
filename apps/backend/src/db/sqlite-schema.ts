@@ -1232,6 +1232,7 @@ export const brandingConfig = sqliteTable('branding_config', {
 	logoMediaType: text('logo_media_type'),
 	faviconData: text('favicon_data'),
 	faviconMediaType: text('favicon_media_type'),
+	primaryColor: text('primary_color'),
 	updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.$onUpdate(() => /* @__PURE__ */ new Date())

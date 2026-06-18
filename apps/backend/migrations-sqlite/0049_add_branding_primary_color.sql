@@ -1,0 +1,1 @@
+ALTER TABLE `branding_config` ADD `primary_color` text;

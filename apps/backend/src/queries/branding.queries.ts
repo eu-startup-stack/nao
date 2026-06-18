@@ -19,6 +19,7 @@ export interface BrandingSummary {
 	tabTitle: string | null;
 	logo: { mediaType: string } | null;
 	favicon: { mediaType: string } | null;
+	primaryColor: string | null;
 	updatedAt: Date;
 }
 
@@ -27,6 +28,7 @@ export interface BrandingUpdate {
 	tabTitle?: string | null;
 	logo?: BrandingAsset | null;
 	favicon?: BrandingAsset | null;
+	primaryColor?: string | null;
 }
 
 const ASSET_COLUMNS: Record<BrandingAssetKind, { data: keyof DBBrandingConfig; mediaType: keyof DBBrandingConfig }> = {
@@ -49,6 +51,7 @@ export async function getBrandingSummary(): Promise<BrandingSummary | null> {
 		tabTitle: row.tabTitle ?? null,
 		logo: row.logoMediaType ? { mediaType: row.logoMediaType } : null,
 		favicon: row.faviconMediaType ? { mediaType: row.faviconMediaType } : null,
+		primaryColor: row.primaryColor ?? null,
 		updatedAt: row.updatedAt,
 	};
 }
@@ -83,6 +86,9 @@ export async function upsertBranding(update: BrandingUpdate): Promise<void> {
 	if (update.favicon !== undefined) {
 		partial.faviconData = update.favicon?.data ?? null;
 		partial.faviconMediaType = update.favicon?.mediaType ?? null;
+	}
+	if (update.primaryColor !== undefined) {
+		partial.primaryColor = update.primaryColor;
 	}
 
 	if (Object.keys(partial).length === 0) {

@@ -10,6 +10,7 @@ export interface BrandingState {
 	tabTitle: string | null;
 	hasLogo: boolean;
 	hasFavicon: boolean;
+	primaryColor: string | null;
 	updatedAt: number | null;
 }
 
@@ -25,6 +26,7 @@ export function useBranding(): BrandingState {
 			tabTitle: null,
 			hasLogo: false,
 			hasFavicon: false,
+			primaryColor: null,
 			updatedAt: null,
 		}
 	);

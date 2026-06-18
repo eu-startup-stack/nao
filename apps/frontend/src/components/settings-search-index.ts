@@ -497,6 +497,16 @@ export const settingsSearchIndex: SettingsSearchEntry[] = [
 		adminOnly: true,
 		cloudHidden: true,
 	},
+	{
+		page: '/settings/white-label',
+		pageLabel: 'White-label',
+		section: 'Brand color',
+		title: 'Main color',
+		description: 'Change the main color used for buttons, links and accents across the app.',
+		keywords: ['color', 'colour', 'main color', 'primary color', 'brand color', 'theme', 'accent', 'enterprise'],
+		adminOnly: true,
+		cloudHidden: true,
+	},
 
 	// ── Memory (user-level) ──────────────────────────────────
 	{
