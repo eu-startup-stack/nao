@@ -7,7 +7,8 @@ interface UserProfileCardProps {
 	name?: string;
 	email?: string;
 	onEdit: () => void;
-	onSignOut: () => void;
+	/** When omitted, the sign-out button is hidden (e.g. under Authentik proxy auth). */
+	onSignOut?: () => void;
 }
 
 export function UserProfileCard({ name, email, onEdit, onSignOut }: UserProfileCardProps) {
@@ -31,10 +32,12 @@ export function UserProfileCard({ name, email, onEdit, onSignOut }: UserProfileC
 					<Pen />
 					Edit
 				</Button>
-				<Button variant='destructive-soft' size='sm' onClick={onSignOut}>
-					<LogOut />
-					Sign out
-				</Button>
+				{!!onSignOut && (
+					<Button variant='destructive-soft' size='sm' onClick={onSignOut}>
+						<LogOut />
+						Sign out
+					</Button>
+				)}
 			</div>
 		</SettingsCard>
 	);

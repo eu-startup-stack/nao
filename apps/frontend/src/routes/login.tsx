@@ -59,6 +59,20 @@ function Login() {
 		},
 	});
 
+	if (config.data?.authentikProxyAuth) {
+		// The Authentik proxy fronted the request and authenticated the user;
+		// the native login UI is disabled. Send the browser to the post-login
+		// destination (or the app root) instead of rendering the form.
+		if (oauthAuthorizeUrl) {
+			window.location.href = oauthAuthorizeUrl;
+		} else if (safeRedirect) {
+			router.history.push(safeRedirect);
+		} else {
+			navigate({ to: '/' });
+		}
+		return null;
+	}
+
 	return (
 		<AuthForm
 			form={form}

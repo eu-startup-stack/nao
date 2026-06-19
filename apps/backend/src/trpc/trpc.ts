@@ -3,8 +3,8 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import superjson from 'superjson';
 
-import { getAuth } from '../auth';
 import * as projectQueries from '../queries/project.queries';
+import { resolveSession } from '../services/authentik-auth.service';
 import { HandlerError } from '../utils/error';
 import { convertHeaders } from '../utils/utils';
 
@@ -13,8 +13,7 @@ export type MiddlewareFunction = Parameters<typeof t.procedure.use>[0];
 
 export const createContext = async (opts: CreateFastifyContextOptions) => {
 	const headers = convertHeaders(opts.req.headers);
-	const auth = await getAuth();
-	const session = await auth?.api.getSession({ headers });
+	const session = await resolveSession(headers, opts.req.ip);
 	return {
 		session,
 		selectedProjectId: headers.get('x-nao-project-id'),

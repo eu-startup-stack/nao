@@ -55,6 +55,13 @@ function SignUp() {
 		return null;
 	}
 
+	if (config.data?.authentikProxyAuth) {
+		// The Authentik proxy owns authentication; sign-up is disabled and
+		// the user has already been authenticated. Bounce to the app root.
+		navigate({ to: '/', replace: true });
+		return null;
+	}
+
 	if (config.data && !isUserSignupEnabled) {
 		return null;
 	}

@@ -36,6 +36,8 @@ function GeneralPage() {
 	const [toolCallDensity, setToolCallDensity] = useToolCallDensity();
 
 	const navigation = useAuthRoute();
+	const config = useQuery(trpc.system.getPublicConfig.queryOptions());
+	const isAuthentikProxyAuth = config.data?.authentikProxyAuth === true;
 
 	const [editOpen, setEditOpen] = useState(false);
 
@@ -88,7 +90,7 @@ function GeneralPage() {
 				name={user?.name}
 				email={user?.email}
 				onEdit={() => setEditOpen(true)}
-				onSignOut={handleSignOut}
+				onSignOut={isAuthentikProxyAuth ? undefined : handleSignOut}
 			/>
 
 			<EditMemberDialog

@@ -6,16 +6,26 @@ import { getAuth, verifyOAuthAccessToken } from '../auth';
 import s from '../db/abstractSchema';
 import { db } from '../db/db';
 import { MCP_SERVER_URL } from '../env';
+import { isAuthentikProxyAuthEnabled, resolveAuthentikSession } from '../services/authentik-auth.service';
 import { logger, serializeError } from '../utils/logger';
 import { convertHeaders } from '../utils/utils';
 
 export async function resolveUserId(fastifyRequest: {
 	headers: Record<string, string | string[] | undefined>;
 	url: string;
+	ip?: string;
 }): Promise<string | null> {
-	const auth = await getAuth();
 	const headers = convertHeaders(fastifyRequest.headers);
 
+	if (isAuthentikProxyAuthEnabled()) {
+		// When Authentik proxy auth is the configured path, the proxy fronts
+		// every request. There is no native-login or bearer-token fallback —
+		// requests without valid Authentik headers are unauthenticated.
+		const authentikSession = await resolveAuthentikSession(headers, fastifyRequest.ip);
+		return authentikSession?.user.id ?? null;
+	}
+
+	const auth = await getAuth();
 	const session = await auth.api.getSession({ headers });
 	if (session?.user) {
 		return session.user.id;

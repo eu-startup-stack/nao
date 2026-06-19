@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
 
 import type { App } from '../app';
-import { getAuth } from '../auth';
 import { env } from '../env';
 import * as userQueries from '../queries/user.queries';
+import { resolveSession } from '../services/authentik-auth.service';
 import * as githubService from '../services/github';
 import { convertHeaders } from '../utils/utils';
 
@@ -17,8 +17,7 @@ export const githubRoutes = async (app: App) => {
 			return reply.status(400).send({ error: 'GitHub integration is not configured' });
 		}
 
-		const auth = await getAuth();
-		const session = await auth.api.getSession({ headers: convertHeaders(request.headers) });
+		const session = await resolveSession(convertHeaders(request.headers), request.ip);
 		if (!session?.user) {
 			return reply.status(401).send({ error: 'Unauthorized' });
 		}
@@ -39,8 +38,7 @@ export const githubRoutes = async (app: App) => {
 			return reply.redirect('/settings/organization?github=error&reason=missing_params');
 		}
 
-		const auth = await getAuth();
-		const session = await auth.api.getSession({ headers: convertHeaders(request.headers) });
+		const session = await resolveSession(convertHeaders(request.headers), request.ip);
 		if (!session?.user) {
 			return reply.redirect('/settings/organization?github=error&reason=unauthorized');
 		}

@@ -20,6 +20,7 @@ import { LOG_CLEANUP_JOB_NAME, logCleanupHandler, runLogCleanup } from './handle
 import { MCP_QUERY_DATA_CLEANUP_JOB_NAME, mcpQueryDataCleanupHandler } from './handlers/mcp-query-data-cleanup.handler';
 import { STORY_REFRESH_JOB_NAME, storyRefreshHandler } from './handlers/story-refresh.handler';
 import { mcpServerRoutes } from './mcp/routes';
+import { authentikSecurityHook } from './middleware/authentik';
 import { ensureOrganizationSetup } from './queries/organization.queries';
 import { agentRoutes } from './routes/agent';
 import { authRoutes } from './routes/auth';
@@ -115,6 +116,10 @@ app.addHook('onResponse', (request, reply, done) => {
 	});
 	done();
 });
+
+// Strip spoofed X-authentik-* headers from non-trusted sources. Must run
+// before any route that may read those headers.
+app.addHook('onRequest', authentikSecurityHook);
 
 // Register raw body plugin for Slack signature verification
 app.register(fastifyRawBody, {

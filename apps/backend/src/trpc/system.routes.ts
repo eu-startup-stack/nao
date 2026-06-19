@@ -8,6 +8,7 @@ export const systemRoutes = {
 		naoMode: env.NAO_MODE,
 		enableUserLogin: env.ENABLE_USER_LOGIN,
 		enableUserSignup: await isUserSignupAvailable(),
+		authentikProxyAuth: env.AUTHENTIK_PROXY_AUTH,
 		betaAutomationsEnabled: env.BETA_AUTOMATIONS_ENABLED,
 		betaContextRecommendationsEnabled: env.BETA_CONTEXT_RECOMMENDATIONS_ENABLED,
 	})),

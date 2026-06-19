@@ -69,6 +69,37 @@ const envSchema = z.object({
 	OIDC_AUTH_DOMAINS: z.string().optional(),
 	OIDC_PKCE: z.string().optional(),
 
+	// Authentik proxy header authentication (community/OSS).
+	// When enabled, the app trusts X-authentik-* headers injected by an
+	// Authentik outpost in front of the app and skips its own login UI.
+	// Requests from non-trusted IPs have the headers stripped (anti-spoof).
+	AUTHENTIK_PROXY_AUTH: z
+		.enum(['true', 'false'])
+		.optional()
+		.default('false')
+		.transform((val) => val === 'true'),
+	// Comma-separated trusted proxy IPs/CIDRs allowed to send X-authentik-* headers.
+	// Defaults to loopback. Supports IPv4 and IPv6.
+	AUTHENTIK_TRUSTED_PROXIES: z
+		.string()
+		.optional()
+		.default('127.0.0.1/32, ::1/128')
+		.transform((val) => val?.trim() || '127.0.0.1/32, ::1/128'),
+	// Optional shared secret: if set, the proxy must send a matching
+	// x-authentik-proxy-secret header for the headers to be trusted.
+	AUTHENTIK_PROXY_SECRET: z
+		.string()
+		.optional()
+		.transform((val) => val?.trim() || undefined),
+	// Group-name prefix used to map Authentik groups to app roles
+	// (e.g. "nao-admin" with prefix "nao" => "admin"). A user MUST have at
+	// least one "<prefix>-<role>" group or access is denied.
+	AUTHENTIK_GROUP_PREFIX: z
+		.string()
+		.optional()
+		.default('nao')
+		.transform((val) => val?.trim() || 'nao'),
+
 	SMTP_PASSWORD: z.string().optional(),
 	SMTP_HOST: z.string().optional(),
 	SMTP_PORT: z.string().optional(),
