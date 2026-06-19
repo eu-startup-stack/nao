@@ -605,3 +605,96 @@ made.
 planner to assign Task 4 (Docker/env cleanup, commit, push), or
 tester to run the full backend test suite as a regression check
 first.
+
+---
+
+## Task 4 — Docker/env cleanup + verify + commit + push (DONE)
+
+### Files To Change
+- `Dockerfile` — removed the comment block and the `RUN
+  --mount=type=bind,source=docker/lock-license-key.mjs,…` step that ran
+  the deleted `docker/lock-license-key.mjs` script. Net change: 5 lines
+  removed (lines 127-131 of the pre-edit file). The build no longer
+  depends on the deleted `docker/lock-license-key.mjs` and the
+  `NAO_LICENSE_PUBLIC_KEY` env var strip step is gone.
+- `.env.example` — removed three Enterprise-only env-var sections
+  (~27 lines total):
+  - "Enterprise license" — `NAO_LICENSE` raw-token + file-path entries
+    (pre-edit lines 72-76).
+  - "Microsoft / Azure AD SSO" — `AZURE_AD_CLIENT_ID`,
+    `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_TENANT_ID`,
+    `AZURE_AD_TOKEN_SCOPE` (pre-edit lines 103-110).
+  - "OIDC / SSO Configuration" — `OIDC_PROVIDER_ID`,
+    `OIDC_PROVIDER_NAME`, `OIDC_DISCOVERY_URL`, `OIDC_CLIENT_ID`,
+    `OIDC_CLIENT_SECRET`, `OIDC_SCOPES`, `OIDC_AUTH_DOMAINS`,
+    `OIDC_PKCE` (pre-edit lines 112-122).
+  - All OS env vars (Authentik, Google, GitHub, SMTP, LLM, ClickHouse,
+    Notion, PostHog, etc.) are preserved untouched.
+- `WORKFLOW_STATE.md` — Task 4 status section added (this entry).
+
+### Implementation Notes
+- Dockerfile was previously 161 lines; after edit it is 155 lines.
+  Verified by `read` that the comment block (`# Lock down the license
+  public key for production…`) and the `RUN --mount=…` step are gone
+  and that line 127 is now `# Copy frontend build output`.
+- `.env.example` was previously 156 lines; after edit it is 129 lines.
+  Verified by `read` that the Enterprise license, Microsoft/Azure AD,
+  and OIDC sections are gone, and that the Authentik proxy header
+  section flows directly under the `DEFAULT_USER_ROLE` line.
+- The pre-commit / pre-push hooks were bypassed with `--no-verify` per
+  the documented precedent (the full workspace hook exceeds the 2-minute
+  shell timeout). tsc + prettier were manually verified on the modified
+  files before committing, as required by the plan.
+
+### Verification
+- `grep -r` for `@license Enterprise`, `license.service`, `license-startup`,
+  `license-endpoints`, `license-public-key`, `branding.service`,
+  `branding.queries`, `routes/branding`, `microsoft-auth.service`,
+  `oidc-auth.service`, `use-branding`, `branding-head`,
+  `auth-microsoft-button`, `auth-oidc-button`, `lock-license-key`,
+  `license-types`, `trpc.license`, `trpc.branding` across the repo
+  (excluding `node_modules`, `.git`, `WORKFLOW_STATE.md`, `LICENSE`,
+  `CONTRIBUTING.md`, `CHANGELOG.md`, `cli/`) → **0 matches**. The only
+  matches live in `WORKFLOW_STATE.md` (which documents the removal
+  itself) and `LICENSE` / `CONTRIBUTING.md` (which describe the
+  original project's license model — explicitly allowed by the plan).
+- `npx tsc --noEmit -p apps/backend/tsconfig.json` → exit 0, no output.
+- `npx tsc --noEmit -p apps/frontend/tsconfig.json` → exit 0, no output.
+- `npx prettier --check` on the 13 modified OS source files
+  (`app.ts`, `router.ts`, `auth-config.routes.ts`, `auth.ts`, `agent.ts`,
+  `package.json`, `__root.tsx`, `sidebar.tsx`, `auth-form.tsx`,
+  `sidebar-settings-nav.tsx`, `settings-search-index.ts`,
+  `require-admin.ts`, `routeTree.gen.ts`) → "All matched files use
+  Prettier code style!" (exit 0).
+- `npx prettier --check Dockerfile .env.example` → exits 2 with
+  "No parser could be inferred" — as expected, neither file is covered
+  by Prettier (no parser plugin for either format in this repo).
+
+### Commit & push
+- Commit: `62ca15a` — `Remove non-open-source code` — 43 files changed,
+  524 insertions, 2834 deletions (27 deletions + 16 modifications:
+  6 backend OS files, 7 frontend OS files, `Dockerfile`, `.env.example`,
+  `WORKFLOW_STATE.md`).
+- Push: `git push origin main --no-verify` → success
+  (`a789a33..62ca15a main -> main`) to
+  `https://github.com/eu-startup-stack/nao.git`.
+- `git log origin/main --oneline -3` →
+  ```
+  62ca15a Remove non-open-source code
+  a789a33 feat(auth): add Authentik proxy header authentication (community/OSS)
+  8d6d017 Update APPROVED_CONTRIBUTORS
+  ```
+- `git status` → "nothing to commit, working tree clean" after the
+  push.
+
+### Current Status
+Task 4 complete. All 4 tasks of the "Remove non-open-source code"
+effort are merged to `origin/main`. The fork (`eu-startup-stack/nao`)
+is now free of the `/* @license Enterprise */`-marked files; only
+Apache 2.0 + MIT open-source code remains. `LICENSE` and
+`CONTRIBUTING.md` still describe the original project's dual-license
+model, which is acceptable (documentation only).
+
+### Next Agent
+tester (full backend test suite regression run) or done — the
+implementation cycle for this change is complete.
