@@ -25,7 +25,6 @@ import { ensureOrganizationSetup } from './queries/organization.queries';
 import { agentRoutes } from './routes/agent';
 import { authRoutes } from './routes/auth';
 import { authErrorRedirectRoutes } from './routes/auth-error-redirect';
-import { brandingRoutes } from './routes/branding';
 import { chartRoutes } from './routes/chart';
 import { deployRoutes } from './routes/deploy';
 import { embedStoryDownloadRoutes } from './routes/embed-story-download';
@@ -36,9 +35,6 @@ import { teamsRoutes } from './routes/teams';
 import { telegramRoutes } from './routes/telegram';
 import { testRoutes } from './routes/test';
 import { whatsappRoutes } from './routes/whatsapp';
-import { startLicenseHeartbeat } from './services/license.service';
-import { logLicenseStatus } from './services/license-startup';
-import { pingLicensesServer } from './services/ping';
 import { posthog, PostHogEvent } from './services/posthog';
 import { ensureRecurring, registerJob, startScheduler } from './services/scheduler.service';
 import { slackService } from './services/slack';
@@ -165,10 +161,6 @@ app.register(imageRoutes, {
 	prefix: '/i',
 });
 
-app.register(brandingRoutes, {
-	prefix: '/branding',
-});
-
 app.register(authErrorRedirectRoutes, {
 	prefix: '/api',
 });
@@ -278,8 +270,6 @@ const isReservedBackendPath = (url: string) => {
 		pathname.startsWith('/c/') ||
 		pathname === '/i' ||
 		pathname.startsWith('/i/') ||
-		pathname === '/branding' ||
-		pathname.startsWith('/branding/') ||
 		pathname === '/mcp' ||
 		pathname.startsWith('/mcp/') ||
 		pathname.startsWith('/.well-known/')
@@ -311,7 +301,6 @@ export const startServer = async (opts: { port: number; host: string }) => {
 	} else {
 		await ensureOrganizationSetup();
 	}
-	await logLicenseStatus();
 
 	void runLogCleanup().catch((err) => {
 		logger.error(`Log cleanup failed: ${err instanceof Error ? err.message : String(err)}`, { source: 'system' });
@@ -343,12 +332,10 @@ export const startServer = async (opts: { port: number; host: string }) => {
 	}
 
 	startScheduler();
-	await startLicenseHeartbeat();
 
 	const address = await app.listen({ host: opts.host, port: opts.port });
 	app.log.info(`Server is running on ${address}`);
 
-	void pingLicensesServer();
 	void slackService.startSocketModeForAllProjects();
 
 	posthog.capture(undefined, PostHogEvent.ServerStarted, { ...opts, address });

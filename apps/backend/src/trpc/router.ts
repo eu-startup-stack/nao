@@ -2,7 +2,6 @@ import { accountRoutes } from './account.routes';
 import { apiKeyRoutes } from './api-key.routes';
 import { authConfigRoutes } from './auth-config.routes';
 import { automationRoutes } from './automation.routes';
-import { brandingRoutes } from './branding.routes';
 import { budgetRoutes } from './budget.routes';
 import { chartRoutes } from './chart.routes';
 import { chatRoutes } from './chat.routes';
@@ -14,7 +13,6 @@ import { embedRoutes } from './embed.routes';
 import { favoriteRoutes } from './favorite.routes';
 import { feedbackRoutes } from './feedback.routes';
 import { githubRoutes } from './github.routes';
-import { licenseRoutes } from './license.routes';
 import { logRoutes } from './log.routes';
 import { mcpRoutes } from './mcp.routes';
 import { mcpEndpointRoutes } from './mcp-endpoint.routes';
@@ -34,7 +32,6 @@ import { usageRoutes } from './usage.routes';
 import { userRoutes } from './user.routes';
 
 export const trpcRouter = router({
-	branding: brandingRoutes,
 	budget: budgetRoutes,
 	embed: embedRoutes,
 	chart: chartRoutes,
@@ -48,7 +45,6 @@ export const trpcRouter = router({
 	favorite: favoriteRoutes,
 	feedback: feedbackRoutes,
 	github: githubRoutes,
-	license: licenseRoutes,
 	log: logRoutes,
 	posthog: posthogRoutes,
 	project: projectRoutes,

@@ -19,18 +19,6 @@ import * as orgQueries from './queries/organization.queries';
 import * as userQueries from './queries/user.queries';
 import { emailService } from './services/email';
 import { githubOAuthConfig } from './services/github';
-import { hasFeature, LICENSE_FEATURES } from './services/license.service';
-import {
-	augmentSocialProvidersWithMicrosoft,
-	getTrustedProvidersForMicrosoft,
-	isSocialProviderMicrosoft,
-} from './services/microsoft-auth.service';
-import {
-	augmentPluginsWithOidc,
-	getOidcProviderId,
-	getTrustedProvidersForOidc,
-	isSocialProviderOidc,
-} from './services/oidc-auth.service';
 import { buildForgotPasswordEmail } from './utils/email-builders';
 import { buildGithubAllowlist, isEmailDomainAllowed, resolveProviderId } from './utils/utils';
 
@@ -129,17 +117,7 @@ async function createAuthInstance(googleConfig: GoogleConfig) {
 		};
 	}
 
-	const ssoEnabled = await hasFeature(LICENSE_FEATURES.sso);
-	if (ssoEnabled) {
-		augmentSocialProvidersWithMicrosoft(socialProviders);
-		augmentPluginsWithOidc(ssoPlugins);
-	}
-
-	const trustedProviders = [
-		'google',
-		'github',
-		...(ssoEnabled ? [...getTrustedProvidersForMicrosoft(), ...getTrustedProvidersForOidc()] : []),
-	];
+	const trustedProviders = ['google', 'github'];
 
 	return betterAuth({
 		secret: env.BETTER_AUTH_SECRET,
@@ -190,24 +168,11 @@ async function createAuthInstance(googleConfig: GoogleConfig) {
 							});
 						}
 
-						if (
-							ssoEnabled &&
-							providerId === getOidcProviderId() &&
-							!isEmailDomainAllowed(user.email, env.OIDC_AUTH_DOMAINS ?? '')
-						) {
-							throw new APIError('FORBIDDEN', {
-								message: 'This email domain is not authorized to access this application.',
-							});
-						}
-
 						return true;
 					},
 					async after(user, ctx) {
 						const providerId = resolveProviderId(ctx);
-						const isSocial =
-							providerId === 'google' ||
-							providerId === 'github' ||
-							(ssoEnabled && (isSocialProviderMicrosoft(providerId) || isSocialProviderOidc(providerId)));
+						const isSocial = providerId === 'google' || providerId === 'github';
 
 						if (isCloud) {
 							await orgQueries.initializePersonalOrganization(user.id);

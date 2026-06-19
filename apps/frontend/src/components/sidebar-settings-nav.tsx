@@ -15,7 +15,6 @@ import { cn, hideIf } from '@/lib/utils';
 interface NavContext {
 	isAdmin: boolean;
 	isCloud: boolean;
-	hasLicense: boolean;
 	isViewer: boolean;
 	isInMultipleProjects: boolean;
 }
@@ -82,21 +81,6 @@ const settingsNavItems: NavItem[] = [
 		visible: ({ isAdmin, isCloud }) => isAdmin && !isCloud,
 	},
 	{
-		label: 'Enterprise',
-		type: 'divider',
-		visible: ({ isAdmin, isCloud }) => isAdmin && !isCloud,
-	},
-	{
-		label: 'License',
-		to: '/settings/enterprise',
-		visible: ({ isAdmin, isCloud, hasLicense }) => isAdmin && !isCloud && hasLicense,
-	},
-	{
-		label: 'White-label',
-		to: '/settings/white-label',
-		visible: ({ isAdmin, isCloud }) => isAdmin && !isCloud,
-	},
-	{
 		label: 'Context',
 		type: 'divider',
 		visible: ({ isViewer }) => !isViewer,
@@ -118,7 +102,6 @@ interface SidebarSettingsNavProps {
 	isAdmin: boolean;
 	isViewer: boolean;
 	isCloud: boolean;
-	hasLicense: boolean;
 	projects: ProjectOption[];
 	currentProjectId?: string;
 	onProjectChange: (projectId: string) => void;
@@ -140,7 +123,6 @@ export function SidebarSettingsNav({
 	isAdmin,
 	isViewer,
 	isCloud,
-	hasLicense,
 	projects,
 	currentProjectId,
 	onProjectChange,
@@ -150,9 +132,7 @@ export function SidebarSettingsNav({
 	const [query, setQuery] = useState('');
 
 	const navItems = settingsNavItems.filter(
-		(item) =>
-			item.visible?.({ isAdmin, isCloud, isViewer, isInMultipleProjects: projects.length > 1, hasLicense }) ??
-			true,
+		(item) => item.visible?.({ isAdmin, isCloud, isViewer, isInMultipleProjects: projects.length > 1 }) ?? true,
 	);
 	const canSwitchProjects = projects.length > 1 && !!currentProjectId;
 
@@ -173,9 +153,7 @@ export function SidebarSettingsNav({
 	}, [isCollapsed, isViewer]);
 
 	const fuse = useMemo(() => {
-		const entries = settingsSearchIndex.filter(
-			(e) => (!e.adminOnly || isAdmin) && (!e.cloudHidden || !isCloud) && (!e.licenseRequired || hasLicense),
-		);
+		const entries = settingsSearchIndex.filter((e) => (!e.adminOnly || isAdmin) && (!e.cloudHidden || !isCloud));
 		return new Fuse(entries, {
 			keys: [
 				{ name: 'title', weight: 0.4 },
@@ -186,7 +164,7 @@ export function SidebarSettingsNav({
 			threshold: 0.4,
 			includeScore: true,
 		});
-	}, [isAdmin, isCloud, hasLicense]);
+	}, [isAdmin, isCloud]);
 
 	const results = useMemo(() => {
 		if (query.length < 2) {
@@ -291,7 +269,6 @@ export function SidebarSettingsNav({
 								isCloud,
 								isViewer,
 								isInMultipleProjects: projects.length > 1,
-								hasLicense,
 							}) ?? false;
 
 						const badge = item.badge ? (

@@ -25,7 +25,6 @@ import NaoLogo from '@/components/icons/nao-logo.svg';
 import { Button } from '@/components/ui/button';
 import { useCommandMenuCallback } from '@/contexts/command-menu-callback';
 import { useSidebar } from '@/contexts/sidebar';
-import { brandingAssetUrl, useBranding } from '@/hooks/use-branding';
 import { useChatViewPreferences } from '@/hooks/use-chat-view-preferences';
 import { useSidebarSectionOpen } from '@/hooks/use-sidebar-section-open';
 import { useTimeAgo } from '@/hooks/use-time-ago';
@@ -43,13 +42,10 @@ export function Sidebar() {
 	const project = useQuery(trpc.project.getCurrent.queryOptions());
 	const projects = useQuery(trpc.project.listForCurrentUser.queryOptions());
 	const config = useQuery(trpc.system.getPublicConfig.queryOptions());
-	const license = useQuery(trpc.license.getStatus.queryOptions());
-	const branding = useBranding();
 	const { isAdmin, isViewer } = usePermissions();
 	const isCloud = config.data?.naoMode === 'cloud';
 	const betaAutomationsEnabled = config.data?.betaAutomationsEnabled === true;
 	const { groupBy, filters, setGroupBy, toggleFilter } = useChatViewPreferences();
-	const hasLicense = license.data?.tokenProvided === true;
 
 	const locationPath = useRouterState({ select: (s) => s.location.pathname });
 	const isInSettings = matchRoute({ to: '/settings', fuzzy: true });
@@ -157,19 +153,11 @@ export function Sidebar() {
 						aria-label={isViewer ? 'View shared items' : 'New chat'}
 						className={cn(
 							'flex items-center justify-center mr-auto absolute left-0 z-0 rounded-md cursor-pointer hover:bg-sidebar-accent transition-[opacity,visibility,background-color] duration-300',
-							branding.enabled && branding.hasLogo ? 'p-1' : 'p-2',
+							'p-2',
 							hideIf(effectiveIsCollapsed),
 						)}
 					>
-						{branding.enabled && branding.hasLogo ? (
-							<img
-								src={brandingAssetUrl('logo', branding.updatedAt)}
-								alt={branding.appName ?? 'Logo'}
-								className='h-7 w-auto max-w-[9rem] object-contain'
-							/>
-						) : (
-							<NaoLogo className='size-5' />
-						)}
+						<NaoLogo className='size-5' />
 					</button>
 
 					{isMobile ? (
@@ -264,7 +252,6 @@ export function Sidebar() {
 					isAdmin={isAdmin}
 					isViewer={isViewer}
 					isCloud={isCloud}
-					hasLicense={hasLicense}
 					projects={projects.data ?? []}
 					currentProjectId={project.data?.id}
 					onProjectChange={handleProjectChange}

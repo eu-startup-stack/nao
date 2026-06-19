@@ -6,9 +6,6 @@ import { env } from '../env';
 import * as orgQueries from '../queries/organization.queries';
 import { emailService } from '../services/email';
 import { isGithubSsoEnabled } from '../services/github';
-import { hasFeature, LICENSE_FEATURES } from '../services/license.service';
-import { isMicrosoftConfigured } from '../services/microsoft-auth.service';
-import { getOidcProviderId, isOidcConfigured } from '../services/oidc-auth.service';
 import { adminProtectedProcedure, publicProcedure } from './trpc';
 
 export const authConfigRoutes = {
@@ -51,24 +48,12 @@ export const authConfigRoutes = {
 	},
 	microsoft: {
 		isSetup: publicProcedure.query(async () => {
-			if (!(await hasFeature(LICENSE_FEATURES.sso))) {
-				return false;
-			}
-			return isMicrosoftConfigured();
+			return false;
 		}),
 	},
 	oidc: {
 		getConfig: publicProcedure.query(async () => {
-			if (!(await hasFeature(LICENSE_FEATURES.sso))) {
-				return null;
-			}
-			if (!isOidcConfigured()) {
-				return null;
-			}
-			return {
-				providerId: getOidcProviderId(),
-				providerName: env.OIDC_PROVIDER_NAME ?? 'SSO',
-			};
+			return null;
 		}),
 	},
 	smtp: {

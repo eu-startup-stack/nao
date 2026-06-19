@@ -7,7 +7,6 @@ export interface SettingsSearchEntry {
 	keywords?: string[];
 	adminOnly?: boolean;
 	cloudHidden?: boolean;
-	licenseRequired?: boolean;
 }
 
 export const settingsSearchIndex: SettingsSearchEntry[] = [
@@ -420,80 +419,6 @@ export const settingsSearchIndex: SettingsSearchEntry[] = [
 		title: 'Logs',
 		description: 'Real-time backend logs with auto-refresh.',
 		keywords: ['error', 'warn', 'debug', 'info', 'terminal', 'console'],
-		adminOnly: true,
-		cloudHidden: true,
-	},
-
-	// ── Enterprise ───────────────────────────────────────────
-	{
-		page: '/settings/enterprise',
-		pageLabel: 'Enterprise',
-		title: 'License',
-		description: 'View the status of your nao Enterprise license.',
-		keywords: ['enterprise', 'license', 'subscription', 'activation', 'sso', 'nao_license', 'ee'],
-		adminOnly: true,
-		cloudHidden: true,
-		licenseRequired: true,
-	},
-	{
-		page: '/settings/enterprise',
-		pageLabel: 'Enterprise',
-		section: 'Features',
-		title: 'Enterprise features',
-		description: 'Enterprise capabilities enabled by your license.',
-		keywords: ['features', 'sso', 'enterprise', 'plan'],
-		adminOnly: true,
-		cloudHidden: true,
-		licenseRequired: true,
-	},
-	{
-		page: '/settings/white-label',
-		pageLabel: 'White-label',
-		title: 'White-label branding',
-		description: 'Replace the nao name, logo and favicon with your own branding. Enterprise feature.',
-		keywords: [
-			'white label',
-			'whitelabel',
-			'branding',
-			'logo',
-			'favicon',
-			'tab',
-			'title',
-			'customize',
-			'signup',
-			'login',
-			'enterprise',
-		],
-		adminOnly: true,
-		cloudHidden: true,
-	},
-	{
-		page: '/settings/white-label',
-		pageLabel: 'White-label',
-		section: 'Logos & favicon',
-		title: 'Logo',
-		description: 'Replace the logo shown in the sidebar and on the login and sign-up pages.',
-		keywords: ['logo', 'sidebar', 'login logo', 'signup logo', 'auth', 'brand', 'enterprise'],
-		adminOnly: true,
-		cloudHidden: true,
-	},
-	{
-		page: '/settings/white-label',
-		pageLabel: 'White-label',
-		section: 'Logos & favicon',
-		title: 'Favicon',
-		description: 'Replace the favicon shown in the browser tab.',
-		keywords: ['favicon', 'icon', 'tab', 'enterprise'],
-		adminOnly: true,
-		cloudHidden: true,
-	},
-	{
-		page: '/settings/white-label',
-		pageLabel: 'White-label',
-		section: 'Names',
-		title: 'Browser tab title',
-		description: 'Rename the browser tab shown to your users.',
-		keywords: ['tab title', 'page title', 'name', 'enterprise'],
 		adminOnly: true,
 		cloudHidden: true,
 	},

@@ -14,8 +14,7 @@
 		"./provider-meta": "./src/agents/provider-meta.ts",
 		"./shared-chat": "./src/queries/shared-chat.queries.ts",
 		"./db": "./src/db/db.ts",
-		"./schema": "./src/db/abstractSchema.ts",
-		"./license-types": "./src/types/license.ts"
+		"./schema": "./src/db/abstractSchema.ts"
 	},
 	"scripts": {
 		"dev": "bun --watch src/index.ts",

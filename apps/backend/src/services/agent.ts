@@ -65,9 +65,7 @@ import { logger } from '../utils/logger';
 import { addPromptCache } from '../utils/prompt-cache';
 import { truncateMiddle } from '../utils/utils';
 import { compactionService } from './compaction';
-import { hasFeature, LICENSE_FEATURES } from './license.service';
 import { memoryService } from './memory';
-import { getAzureAccessTokenForUser } from './microsoft-auth.service';
 import { skillService } from './skill';
 
 export interface AgentRunResult {
@@ -141,7 +139,7 @@ async function _buildContextBase(opts: {
 		opts.agentSettings !== undefined ? opts.agentSettings : await projectQueries.getAgentSettings(opts.projectId);
 	const [envVars, azureAccessToken] = await Promise.all([
 		projectQueries.getEnvVars(opts.projectId),
-		hasFeature(LICENSE_FEATURES.sso).then((has) => (has ? getAzureAccessTokenForUser(opts.userId) : null)),
+		Promise.resolve(null),
 	]);
 	return {
 		projectFolder: project.path,
